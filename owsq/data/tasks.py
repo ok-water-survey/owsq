@@ -3,7 +3,7 @@ from celery.task.sets import subtask
 from celery import chord
 from pymongo import Connection
 from datetime import datetime,timedelta
-from cybercom.data.catalog import datacommons #catalog
+#from cybercom.data.catalog import datacommons #catalog
 
 mongoHost = 'localhost'
 
