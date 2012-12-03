@@ -17,6 +17,6 @@ def tsum(numbers):
     return sum(numbers)
 @task()
 def data_workflow(num, **kwargs):
-    calback = tsum.subtask()
+    callback = tsum.subtask()
     header = [add.subtask((i, i)) for i in xrange(int(num))]
     return chord(header)(callback).get()
