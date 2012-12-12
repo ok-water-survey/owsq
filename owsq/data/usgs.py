@@ -22,7 +22,7 @@ def usgs_sync(source,database=site_database):
     elif source == 'params':
         return usgs_parameters(database,'parameters')
     elif source == 'usgs-iv':
-        return usgs_iv(database,'usgs_iv_site'):
+        return usgs_iv(database,'usgs_iv_site')
     else:
         return json.dumps({'error': "Unknown source", 'available_sources': ['usgs','usgs-wq','usgs-iv','usgs-params']}, indent=2)
 
