@@ -1,4 +1,4 @@
-import json,urllib2,StringIO,csv,ConfigParser
+import json,urllib2,StringIO,csv,ConfigParser,os
 from celery.task import task
 from celery.task.sets import subtask
 from celery import chord
