@@ -1,10 +1,16 @@
-import json,urllib2,StringIO,csv
+import json,urllib2,StringIO,csv,ConfigParser
 from celery.task import task
 from celery.task.sets import subtask
 from celery import chord
 from pymongo import Connection
 from datetime import datetime,timedelta
-#from cybercom.data.catalog import datacommons #catalog
+from cybercom.data.catalog import datacommons #catalog
+#set catalog user and passwd
+cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
+config= ConfigParser.RawConfigParser()
+config.read(cfgfile)
+username = config.get('user','username')
+password = config.get('user','password')
 
 mongoHost = 'localhost'
 site_database='ows'
@@ -117,3 +123,8 @@ def usgs_parameters(database=site_database,collection='parameters',delete=True):
         temp=row.strip('\r\n').split('\t')
         db[database][collection].insert(dict(zip(head,temp)))
     return json.dumps({'source':'params','url':url,'database':database,'collection':collection}, indent=2)
+@task()
+def usgs_get_sitedata(siteno):
+    dcommons = datacommons.toolkit(username,password)
+    records= dcommons.get_data(commons_name,{'spec':{'datasource':'USGS'},'fields':['sources']})
+    return json.dumps(records)
