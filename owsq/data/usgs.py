@@ -126,5 +126,5 @@ def usgs_parameters(database=site_database,collection='parameters',delete=True):
 @task()
 def usgs_get_sitedata(siteno):
     dcommons = datacommons.toolkit(username,password)
-    records= dcommons.get_data(commons_name,{'spec':{'datasource':'USGS'},'fields':['sources']})
+    records= dcommons.get_data('ows',{'spec':{'datasource':'USGS'},'fields':['sources']})
     return json.dumps(records)
