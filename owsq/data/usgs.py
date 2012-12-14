@@ -124,7 +124,7 @@ def usgs_parameters(database=site_database,collection='parameters',delete=True):
         db[database][collection].insert(dict(zip(head,temp)))
     return json.dumps({'source':'params','url':url,'database':database,'collection':collection}, indent=2)
 @task()
-def usgs_get_sitedata(siteno):
+def usgs_get_sitedata(siteno,data_provider='USGS'):
     dcommons = datacommons.toolkit(username,password)
-    records= dcommons.get_data('ows',{'spec':{'datasource':'USGS'},'fields':['sources']})
+    records= dcommons.get_data('ows',{'spec':{'data_provider':data_provider},'fields':['sources']})
     return json.dumps(records)
