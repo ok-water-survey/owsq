@@ -16,6 +16,69 @@ mongoHost = 'localhost'
 site_database='ows'
 
 @task()
+def load_site_metadata(site=None,site_collection='usgs_site',database=site_database,collection='usgs_site_metadata',delete=True):
+    if site:
+        sites= site.split(',')
+        for s in sites:
+            get_site_metadata(s,db,database,collection)
+    else:
+        db=Connection(mongoHost)
+        if delete:
+            db[database][collection].remove()
+        sites= db[database][site_collection].find(timeout=False)#.limit(10)
+        for site in sites:
+            get_site_metadata(site['site_no'],db,database,collection)
+
+def get_site_metadata(site,db,database,collection):#,database=site_database,collection='usgs_site_metadata',delete=True):
+    '''
+        Docstring
+    '''
+    url='http://waterservices.usgs.gov/nwis/site/?format=rdb&sites=%s&seriesCatalogOutput=true' % (site)
+    f1 = urllib2.urlopen(url)
+    temp='#'
+    head=''
+    while (temp[0]=="#"):
+        temp=f1.readline()
+        if temp[0]!='#':
+            head = temp.strip('\r\n').split('\t')
+    f1.readline()
+    for row in f1:
+        temp=row.strip('\r\n').split('\t')
+        data = dict(zip(head,temp))
+        try:
+            param=db[database]['parameters'].find_one({'parameter_cd': data['parm_cd']})
+            data['parameter']={'group_name':param['parameter_group_nm'],'name':param['parameter_nm'],'units':param['parameter_units']}
+        except:
+            pass
+        exist=db[database][collection].find_one({'site_no':site,'parm_cd':data['parm_cd'],'srs_id':data['srs_id'],'data_type_cd':data['data_type_cd']})
+        if exist:
+            data['_id']=exist['_id']
+        db[database][collection].save(data)
+    #print head
+@task()
+def get_metadata_site(site,ws_url='http://waterservices.usgs.gov/nwis/site/?format=rdb&sites=%s&seriesCatalogOutput=true',database=site_database):
+    db=Connection(mongoHost)
+    url= ws_url % (site)
+    f1 = urllib2.urlopen(url)
+    temp='#'
+    head=''
+    output=[]
+    while (temp[0]=="#"):
+        temp=f1.readline()
+        if temp[0]!='#':
+            head = temp.strip('\r\n').split('\t')
+    f1.readline()
+    for row in f1:
+        temp=row.strip('\r\n').split('\t')
+        data = dict(zip(head,temp))
+        try:
+            param=db[database]['parameters'].find_one({'parameter_cd': data['parm_cd']})
+            data['parameter']={'group_name':param['parameter_group_nm'],'name':param['parameter_nm'],'units':param['parameter_units']}
+        except:
+            pass
+        output.append(data)
+    return json.dumps(output)#, indent=2)
+@task()
 def usgs_sync(source,database=site_database):
     ''' 
         source - [usgs-wq,usgs,params,usgs-iv]
