@@ -187,7 +187,7 @@ def usgs_parameters(database=site_database,collection='parameters',delete=True):
         db[database][collection].insert(dict(zip(head,temp)))
     return json.dumps({'source':'params','url':url,'database':database,'collection':collection}, indent=2)
 @task()
-def usgs_get_sitedata(sites,format='json',data_provider='USGS'):
+def usgs_get_sitedata(sites,type='instantaneous',params="{'format':'json'}",data_provider='USGS'):
     dcommons = datacommons.toolkit(username,password)
     records= dcommons.get_data('ows',{'spec':{'data_provider':data_provider},'fields':['sources']})
     sources = records[0]['sources']
@@ -195,16 +195,21 @@ def usgs_get_sitedata(sites,format='json',data_provider='USGS'):
     for source,val in sources.items():
         #src_url.append(val['url'])
         #for url in src_url:
-        url =val['url'] + 'format='+ format +'&sites='+ sites 
-        #print url
-        urlcheck = commands.getoutput("wget --spider '" + url + "' 2>&1| grep 'Remote file exists'")
-        if urlcheck:
-            try:
-                res=urllib2.urlopen(url)
-                data= json.loads(res.read())
-                result[source]={'url':url,'data':data}
-            except:
-                pass
-    return json.dumps( result, indent=2 )
+        temp=''
+        if source==type:
+            for k,v in json.loads(params.replace("'",'"')).items():
+                temp= k + "=" + v + '&'
+            
+            url =val['url'] + temp + 'sites=' + sites 
+            #print url
+            urlcheck = commands.getoutput("wget --spider '" + url + "' 2>&1| grep 'Remote file exists'")
+            if urlcheck:
+                try:
+                    res=urllib2.urlopen(url)
+                    data= json.loads(res.read())
+                    result[source]={'url':url,'data':data}
+                except:
+                    pass
+                return json.dumps( result, indent=2 )
 
 
