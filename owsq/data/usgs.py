@@ -198,7 +198,8 @@ def usgs_get_sitedata(sites,type='instantaneous',params="{'format':'json'}",data
         temp=''
         #print params
         if source==type:
-            for k,v in json.loads(params.replace("'",'"')).items():
+            param = json.loads(params.replace("'",'"'))
+            for k,v in param.items():
                 temp= temp + k + "=" + v + '&'
             
             url =val['url'] + temp + 'sites=' + sites 
@@ -207,8 +208,12 @@ def usgs_get_sitedata(sites,type='instantaneous',params="{'format':'json'}",data
             if urlcheck:
                 try:
                     res=urllib2.urlopen(url)
-                    data= json.loads(res.read())
-                    result[source]={'url':url,'data':data}
+                    if param['format']=='rdb':
+                        data = res.read()
+                        return data 
+                    else:
+                        data= json.loads(res.read())
+                        result[source]={'url':url,'data':data}
                 except:
                     pass
                 return json.dumps( result, indent=2 )
