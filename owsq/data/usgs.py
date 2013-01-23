@@ -196,9 +196,10 @@ def usgs_get_sitedata(sites,type='instantaneous',params="{'format':'json'}",data
         #src_url.append(val['url'])
         #for url in src_url:
         temp=''
+        #print params
         if source==type:
             for k,v in json.loads(params.replace("'",'"')).items():
-                temp= k + "=" + v + '&'
+                temp= temp + k + "=" + v + '&'
             
             url =val['url'] + temp + 'sites=' + sites 
             #print url
