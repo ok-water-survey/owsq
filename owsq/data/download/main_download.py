@@ -17,7 +17,7 @@ password = config.get('user','password')
 
 mongoHost = 'localhost'
 site_database='ows'
-basedir =  '/data/dataportal_temp/'
+basedir =  '/data/static/ows_tasks/'
 @task()
 def data_download(data=None):
     '''
