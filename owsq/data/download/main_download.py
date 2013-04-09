@@ -38,8 +38,8 @@ def data_download(data=None,basedir='/data/static/'):
     newDir = os.path.join(basedir,'ows_tasks/',str(data_download.request.id))
     call(["mkdir",newDir])
     os.chdir(newDir)
+    call(["touch",os.path.join(newDir,'task_log.txt')])
     logger = data_download.get_logger(logfile=os.path.join(newDir,'task_log.txt'))
-    os.chdir(newDir)
     urls=[]
     for itm,value in data.items():
         item = ast.literal_eval(value['query'])
