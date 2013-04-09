@@ -52,4 +52,4 @@ def data_download(data=None,basedir='/data/static/'):
         except Exception as inst:
             logger.warning(inst)
             raise inst
-    return filezip.makezip(urls, str(data_download.request.id), os.path.join(basedir,'request/'), overwrite=True)
+    return filezip.makezip(urls, str(data_download.request.id)+ '.zip', os.path.join(basedir,'request/'))
