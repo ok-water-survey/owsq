@@ -38,8 +38,7 @@ def data_download(data=None,basedir='/data/static/'):
     newDir = os.path.join(basedir,'ows_tasks/',str(data_download.request.id))
     call(["mkdir",newDir])
     os.chdir(newDir)
-    logger = get_task_logger(logfile=os.path.join(newDir,'task_log.txt'))
-    #logging.basicConfig(filename=os.path.join(newDir,'task_log.txt'),level=logging.DEBUG)
+    logger = data_download.get_logger(logfile=os.path.join(newDir,'task_log.txt'))
     os.chdir(newDir)
     urls=[]
     for itm,value in data.items():
@@ -47,7 +46,7 @@ def data_download(data=None,basedir='/data/static/'):
         try:
             query = ast.literal_eval(value['query'])
             logger.info(value['name'] + ' -ParamCode:' + query['parameterCd'] + ' - STARTED')
-            data_import=imp.load_source(item['source'],os.path.join(module_dir,'USGS'+'.py')) # __import__(os.path.join(pwd,'USGS'))#item['source'])
+            data_import=imp.load_source(item['source'],os.path.join(module_dir,item['source'] + '.py')) # __import__(os.path.join(pwd,'USGS'))#item['source'])
             urls.append(data_import.save(value['name'],newDir,query))
             logger.info(value['name'] + ' -ParamCode:' + query['parameterCd'] + ' - FINISHED')
         except Exception as inst:
