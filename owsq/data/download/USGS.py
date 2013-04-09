@@ -52,8 +52,8 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet'):
             #print os.path.join('~',filename)
             urlbase= host['base_directory']
             #urlbase='/Users/mstacy'
-            print path.replace(urlbase ,host['url']) + filename + "YESSSSSS"
-            return path.replace(urlbase ,host['url']) + filename
+            print os.path.join(path.replace(urlbase ,host['url']),filename) + "  YESSSSSS"
+            return os.path.join(path.replace(urlbase ,host['url']),filename)
         except Exception as inst:
             print inst 
     return 'Bad Url'       
