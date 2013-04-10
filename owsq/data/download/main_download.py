@@ -28,9 +28,12 @@ def data_download(data=None,basedir='/data/static/'):
                           "parameter":"Discharge, cubic feet per second",
                            "query":"{'source':'USGS',  'webservice_type':'uv','sites':'07241800','parameterCd':'00060','startDT':'2007-10-01','endDT':'2013-04-04'}"}
                 }
+        query['source'] used to import module which will have a save function. THis function returns a url to file just downloaded.
+        filezip creates a zip file from the list of urls
+        Task returns a url to the zip file of all data downloaded from different sources 
         Currently performing in a serial fashion. Need to update and perform with celery groups in which multiple parallel subtask are generated.
+        
     '''
-    #data= '''{"SCI-1":{"quantity":1,"id":"SCI-1","name":"North Canadian River at Shawnee, OK (07241800)","parameter":"Discharge, cubic feet per second","query":"{'source':'USGS','webservice_type':'uv','sites':'07241800','parameterCd':'00060','startDT':'2007-10-01','endDT':'2013-04-04'}"}}'''
     if not data:
         raise 'No Data'
     data = json.loads(data)
@@ -46,7 +49,7 @@ def data_download(data=None,basedir='/data/static/'):
         try:
             query = ast.literal_eval(value['query'])
             logger.info(value['name'] + ' -ParamCode:' + query['parameterCd'] + ' - STARTED')
-            data_import=imp.load_source(item['source'],os.path.join(module_dir,item['source'] + '.py')) # __import__(os.path.join(pwd,'USGS'))#item['source'])
+            data_import=imp.load_source(item['source'],os.path.join(module_dir,item['source'] + '.py')) 
             urls.append(data_import.save(value['name'],newDir,query))
             logger.info(value['name'] + ' -ParamCode:' + query['parameterCd'] + ' - FINISHED')
         except Exception as inst:

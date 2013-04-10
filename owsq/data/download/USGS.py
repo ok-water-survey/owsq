@@ -10,11 +10,13 @@ password = config.get('user','password')
 
 
 def save(name,path,query):
+    '''Based function to all source imports in Download module'''
     temp=query
     temp.pop('source')
     return save_sitedata(name,path,temp)
 
-def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet'):
+def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_format='rdb'):
+    '''Load data from USGS websevice and store local NGINX web server. Returns url of file'''
     #Load source web service data from metadata catalog
     dcommons = datacommons.toolkit(username,password)
     sources = dcommons.get_data('ows',{'spec':{'data_provider':data_provider}})[0]
@@ -23,18 +25,16 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet'):
     hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
     for item in(item for item in hosts if item['host']==os.uname()[1]):
         host=item
-    for item in hosts:
-        if item['host']==os.uname()[1]:
-            host=item 
     if not host:
         raise 'No Host specified, Please upadate Catalog'
     sites=query['sites']
     params=query.copy()
-    params['format']='rdb'
+    if not 'format' in params:
+        params['format'] = default_format #default format
     params.pop('sites')
+    #Setup metadata web service from data catalog
     metadata = sources[query['webservice_type']]
     params.pop('webservice_type')
-    #metadata = sources[query['webservice_type']]
     temp=''
     for k,v in params.items():
         temp= temp + k + "=" + v + '&'
@@ -45,15 +45,11 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet'):
         try:
             res=urllib2.urlopen(url)
             filename= sites + '_parameterCd-' + query['parameterCd'] + '.txt'
-            #f1=open(os.path.join('/Users/mstacy',filename),'w')
-            #print os.path.join('~',filename)
             f1=open(os.path.join(path,filename),'w')
             f1.write(res.read())
-            #print os.path.join('~',filename)
             urlbase= host['base_directory']
-            #urlbase='/Users/mstacy'
-            print os.path.join(path.replace(urlbase ,host['url']),filename) + "  YESSSSSS"
             return os.path.join(path.replace(urlbase ,host['url']),filename)
         except Exception as inst:
-            print inst 
-    return 'Bad Url'       
+            raise inst
+    else:
+        raise 'URL ERROR: ' + url     
