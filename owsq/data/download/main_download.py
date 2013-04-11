@@ -53,7 +53,7 @@ def data_download(data=None,basedir='/data/static/'):
             data_import=imp.load_source(item['source'],os.path.join(module_dir,item['source'] + '.py')) 
             return_url=data_import.save(value['name'],newDir,query)
             urls.append(return_url)
-            urls.append(data_import.save_csv(return_url,newDir))
+            urls.append(data_import.save_csv(return_url,newDir,filezip))
             logger.info(value['name'] + ' -ParamCode:' + query['parameterCd'] + ' - FINISHED')
         except Exception as inst:
             logger.warning(inst)

@@ -1,7 +1,7 @@
 import os,commands,urllib2
 import ConfigParser #,logging
 from cybercom.data.catalog import datacommons #catalog
-import filezip
+#import filezip
 from cybercom.util.convert import csvfile_processor
 
 #set catalog user and passwd
@@ -17,12 +17,12 @@ def save(name,path,query):
     temp=query
     temp.pop('source')
     return save_sitedata(name,path,temp)
-def save_csv(url,path):
+def save_csv(url,path,filezip):
     dcommons = datacommons.toolkit(username,password)
     data = filezip.rdb2json(url)
     fileName, fileExtension = os.path.splitext( url.split('/')[-1])
     fileExtension='.csv'
-    filename= filename + fileExtension
+    filename= fileName + fileExtension
     f1=open(os.path.join(path,filename),'w')
     f1.write(csvfile_processor(data))
     f1.close()
