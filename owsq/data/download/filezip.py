@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
 from zipfile import ZipFile
-from StringIO import StringIO
 from urllib2 import urlopen
-from cybercom.data.catalog import datalayer as dl
-from datetime import datetime
 import socket
-import os
+import os,json
 
 
 def notify_email(toaddress, subject, bodytext):
@@ -19,25 +16,6 @@ def notify_email(toaddress, subject, bodytext):
     s = smtplib.SMTP('smtp.ou.edu')
     s.sendmail("DoNotReply@ou.edu", [toaddress], msg.as_string())
     return "Notification sent"
-
-def catname2catid(cat_name,commons_id):
-    """ For a particular commons_id return cat_ids matching on cat_name """ 
-    md = dl.Metadata()
-    lookup = md.Search('dt_catalog', ['cat_id', 'cat_name'], where='commons_id = %s' % (commons_id))
-    return [ item['cat_id'] for item in lookup if item['cat_name'] == cat_name ]
-
-
-def catalog_files(commons_id, cat_id, start_date, end_date=None, var_id='URL'):
-    """ Get a list of files from cc catalog based on commons_id and date """
-    return dl.event_results_by_time(commons_id, cat_id, start_date, end_date, var_id)
-
-def getEventResult_Country(**kwargs):
-    from xmlrpclib import ServerProxy
-    URL = 'http://test.cybercommons.org/dataportal/RPC2/'                
-    s = ServerProxy(URL)
-    return s.catalog.getEventResult_Country({'cat_id': kwargs['cat_id'], 
-            'country': kwargs['country'], 'start_date': kwargs['start_date'],
-            'end_date': kwargs['end_date'], 'var_id': kwargs['var_id']} )
 
 def zipurls(files,out_path):
     ''' Takes a list of URL locations, fetches files and returns a zipfile ''' 
@@ -65,7 +43,21 @@ def makezip(urls, outname, outpath, overwrite=False):
         return 'Couldn\'t write zipfile'
     #except:
     #    return "Error writing zip file"
-
+def rdb2json(url):
+    temp='#'
+    head=''
+    f1=urllib2.urlopen(url)
+    while (temp[0]=="#"):
+        temp=f1.readline()
+        if temp[0]!='#':
+            head = temp.strip('\r\n').split('\t')
+    f1.readline()
+    data=[]
+    for row in f1:
+        temp=row.strip('\r\n').split('\t')
+        data.append(dict(zip(head,temp)))
+    return json.dumps(data)
+    
     
 
 

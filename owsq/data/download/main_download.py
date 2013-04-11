@@ -10,6 +10,7 @@ from celery.task.sets import subtask
 #from pymongo import Connection
 #from datetime import datetime,timedelta
 #from cybercom.data.catalog import datacommons #catalog
+from cybercom.util.convert import csvfile_processor
 #set catalog user and passwd
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
 config= ConfigParser.RawConfigParser()
@@ -50,9 +51,24 @@ def data_download(data=None,basedir='/data/static/'):
             query = ast.literal_eval(value['query'])
             logger.info(value['name'] + ' -ParamCode:' + query['parameterCd'] + ' - STARTED')
             data_import=imp.load_source(item['source'],os.path.join(module_dir,item['source'] + '.py')) 
-            urls.append(data_import.save(value['name'],newDir,query))
+            return_url=data_import.save(value['name'],newDir,query)
+            urls.append(return_url)
+            urls.append(data_import.save_csv(return_url,newDir))
             logger.info(value['name'] + ' -ParamCode:' + query['parameterCd'] + ' - FINISHED')
         except Exception as inst:
             logger.warning(inst)
             raise inst
     return filezip.makezip(urls, str(data_download.request.id)+ '.zip', os.path.join(basedir,'request/'))
+
+#def merge_query(data):
+#    qry=[]
+#    for itm,value in data.items():
+#          qry.append(ast.literal_eval(value['query']))
+#    cqry=[]
+#    for item in qry:
+#        if cqry==[]:
+#            cqry.append(item)
+#        else:
+#            for itm in qry.copy():
+                
+

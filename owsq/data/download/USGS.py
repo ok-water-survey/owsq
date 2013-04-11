@@ -1,6 +1,9 @@
 import os,commands,urllib2
 import ConfigParser #,logging
 from cybercom.data.catalog import datacommons #catalog
+import filezip
+from cybercom.util.convert import csvfile_processor
+
 #set catalog user and passwd
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
 config= ConfigParser.RawConfigParser()
@@ -14,7 +17,24 @@ def save(name,path,query):
     temp=query
     temp.pop('source')
     return save_sitedata(name,path,temp)
+def save_csv(url,path):
+    dcommons = datacommons.toolkit(username,password)
+    data = filezip.rdb2json(url)
+    fileName, fileExtension = os.path.splitext( url.split('/')[-1])
+    fileExtension='.csv'
+    filename= filename + fileExtension
+    f1=open(os.path.join(path,filename),'w')
+    f1.write(csvfile_processor(data))
+    f1.close()
+    host=get_host(dcommons)
+    return os.path.join(path.replace(host['base_directory'],host['url']),filename)
 
+def get_host(dcommons):
+    hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
+    for item in(item for item in hosts if item['host']==os.uname()[1]):
+        return item
+    raise 'No Host specified, Please upadate Catalog'
+ 
 def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_format='rdb'):
     '''Load data from USGS websevice and store local NGINX web server. Returns url of file'''
     #Load source web service data from metadata catalog
