@@ -1,16 +1,17 @@
 import ast,os,json,imp,inspect
 import filezip
-import ConfigParser,logging
-from celery.utils.log import get_task_logger
+import ConfigParser
+#,logging
+#from celery.utils.log import get_task_logger
 from subprocess import call
 #import json,urllib2,StringIO,csv,ConfigParser,os,commands
 from celery.task import task
-from celery.task.sets import subtask
+#from celery.task.sets import subtask
 #from celery import chord
 #from pymongo import Connection
 #from datetime import datetime,timedelta
 #from cybercom.data.catalog import datacommons #catalog
-from cybercom.util.convert import csvfile_processor
+#from cybercom.util.convert import csvfile_processor
 #set catalog user and passwd
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
 config= ConfigParser.RawConfigParser()
@@ -42,21 +43,22 @@ def data_download(data=None,basedir='/data/static/'):
     newDir = os.path.join(basedir,'ows_tasks/',str(data_download.request.id))
     call(["mkdir",newDir])
     os.chdir(newDir)
-    call(["touch",os.path.join(newDir,'task_log.txt')])
-    logger = data_download.get_logger(logfile=os.path.join(newDir,'task_log.txt'))
+    #call(["touch",os.path.join(newDir,'task_log.txt')])
+    #logger = data_download.get_logger(logfile=os.path.join(newDir,'task_log.txt'))
+    logger = open(os.path.join(newDir,'task_log.txt'),'w')
     urls=[]
     for itm,value in data.items():
         item = ast.literal_eval(value['query'])
         try:
             query = ast.literal_eval(value['query'])
-            logger.info(value['name'] + ' -ParamCode:' + query['parameterCd'] + ' - STARTED')
+            logger.write('******INFO: %S ParamCode: %S - Status: %s *****\n' % (value['name'], query['parameterCd'],'STARTED'))
             data_import=imp.load_source(item['source'],os.path.join(module_dir,item['source'] + '.py')) 
             return_url=data_import.save(value['name'],newDir,query)
             urls.append(return_url)
             urls.append(data_import.save_csv(return_url,newDir,filezip))
-            logger.info(value['name'] + ' -ParamCode:' + query['parameterCd'] + ' - FINISHED')
+            logger.write('******INFO: %S ParamCode: %S - Status: %s *****\n' % (value['name'], query['parameterCd'],'FINISHED'))
         except Exception as inst:
-            logger.warning(inst)
+            logger.write('************WARNING-ERROR: %s ************\n' % str(inst))
             raise inst
     return filezip.makezip(urls, str(data_download.request.id)+ '.zip', os.path.join(basedir,'request/'))
 
