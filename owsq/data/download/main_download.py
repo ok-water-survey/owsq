@@ -51,14 +51,14 @@ def data_download(data=None,basedir='/data/static/'):
         item = ast.literal_eval(value['query'])
         try:
             query = ast.literal_eval(value['query'])
-            logger.write('******INFO: %S ParamCode: %S - Status: %s *****\n' % (value['name'], query['parameterCd'],'STARTED'))
+            logger.write('******INFO: %s ParamCode: %s - Status: %s *****\n' % (value['name'], query['parameterCd'],'STARTED'))
             data_import=imp.load_source(item['source'],os.path.join(module_dir,item['source'] + '.py')) 
             return_url=data_import.save(value['name'],newDir,query)
             urls.append(return_url)
             urls.append(data_import.save_csv(return_url,newDir,filezip))
-            logger.write('******INFO: %S ParamCode: %S - Status: %s *****\n' % (value['name'], query['parameterCd'],'FINISHED'))
+            logger.write('******INFO: %s ParamCode: %s - Status: %s *****\n' % (value['name'], query['parameterCd'],'FINISHED'))
         except Exception as inst:
-            logger.write('************WARNING-ERROR: %s ************\n' % str(inst))
+            logger.write('************WARNING-ERROR: %s ************\n' % (str(inst)))
             raise inst
     return filezip.makezip(urls, str(data_download.request.id)+ '.zip', os.path.join(basedir,'request/'))
 
