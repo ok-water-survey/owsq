@@ -46,7 +46,7 @@ def makezip(urls, outname, outpath, overwrite=False):
 def rdb2json(url):
     temp='#'
     head=''
-    f1=urllib2.urlopen(url)
+    f1=urlopen(url)
     while (temp[0]=="#"):
         temp=f1.readline()
         if temp[0]!='#':

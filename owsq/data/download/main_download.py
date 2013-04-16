@@ -1,24 +1,19 @@
 import ast,os,json,imp,inspect
-import filezip
+import filezip 
+import datetime
 import ConfigParser
-#,logging
-#from celery.utils.log import get_task_logger
 from subprocess import call
-#import json,urllib2,StringIO,csv,ConfigParser,os,commands
 from celery.task import task
-#from celery.task.sets import subtask
-#from celery import chord
-#from pymongo import Connection
-#from datetime import datetime,timedelta
-#from cybercom.data.catalog import datacommons #catalog
-#from cybercom.util.convert import csvfile_processor
+
 #set catalog user and passwd
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
 config= ConfigParser.RawConfigParser()
 config.read(cfgfile)
 username = config.get('user','username')
 password = config.get('user','password')
-
+log_info_tpl='******INFO: %s ParamCode: %s - Status: %s ******\n'
+log_warn_tpl='******WARNING-ERROR: %s ******\n'
+zip_name_tpl='OWS_Data_%s.zip'
 mongoHost = 'localhost'
 site_database='ows'
 @task()
@@ -43,34 +38,19 @@ def data_download(data=None,basedir='/data/static/'):
     newDir = os.path.join(basedir,'ows_tasks/',str(data_download.request.id))
     call(["mkdir",newDir])
     os.chdir(newDir)
-    #call(["touch",os.path.join(newDir,'task_log.txt')])
-    #logger = data_download.get_logger(logfile=os.path.join(newDir,'task_log.txt'))
     logger = open(os.path.join(newDir,'task_log.txt'),'w')
     urls=[]
     for itm,value in data.items():
         item = ast.literal_eval(value['query'])
         try:
             query = ast.literal_eval(value['query'])
-            logger.write('******INFO: %s ParamCode: %s - Status: %s *****\n' % (value['name'], query['parameterCd'],'STARTED'))
+            logger.write(log_info_tpl % (value['name'], query['parameterCd'],'STARTED'))
             data_import=imp.load_source(item['source'],os.path.join(module_dir,item['source'] + '.py')) 
             return_url=data_import.save(value['name'],newDir,query)
             urls.append(return_url)
-            urls.append(data_import.save_csv(return_url,newDir,filezip))
-            logger.write('******INFO: %s ParamCode: %s - Status: %s *****\n' % (value['name'], query['parameterCd'],'FINISHED'))
+            urls.append(data_import.save_csv(return_url,newDir))#,filezip))
+            logger.write(log_info_tpl % (value['name'], query['parameterCd'],'FINISHED'))
         except Exception as inst:
-            logger.write('************WARNING-ERROR: %s ************\n' % (str(inst)))
+            logger.write(log_warn_tpl % (str(inst)))
             raise inst
-    return filezip.makezip(urls, str(data_download.request.id)+ '.zip', os.path.join(basedir,'request/'))
-
-#def merge_query(data):
-#    qry=[]
-#    for itm,value in data.items():
-#          qry.append(ast.literal_eval(value['query']))
-#    cqry=[]
-#    for item in qry:
-#        if cqry==[]:
-#            cqry.append(item)
-#        else:
-#            for itm in qry.copy():
-                
-
+    return filezip.makezip(urls, zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'))
