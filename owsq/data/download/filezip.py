@@ -59,13 +59,13 @@ def rdb2json(url):
         data.append(dict(zip(head,temp)))
     return json.dumps(data),head,True
     
-def csvfile_processor(entity,col=None,header=True):
+def csvfile_processor(entity,cols=None,header=True):
     """ Use pandas to convert a list of json documents to a CSV file """
     try:
         jsonout = json.loads(entity)
         df = pandas.DataFrame(jsonout)
         outfile = StringIO()
-        df.to_csv(outfile,col=col,header=header,index=False)
+        df.to_csv(outfile,cols=cols,header=header,index=False)
         outfile.seek(0)
         outdata = outfile.read()
         return outdata
