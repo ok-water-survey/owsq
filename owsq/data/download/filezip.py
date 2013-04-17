@@ -2,8 +2,9 @@
 
 from zipfile import ZipFile
 from urllib2 import urlopen
-import socket
-import os,json
+from StringIO import StringIO
+import socket,logging,pandas
+import os,json,sys
 
 
 def notify_email(toaddress, subject, bodytext):
@@ -56,9 +57,21 @@ def rdb2json(url):
     for row in f1:
         temp=row.strip('\r\n').split('\t')
         data.append(dict(zip(head,temp)))
-    return json.dumps(data)
+    return json.dumps(data),head,True
     
-    
+def csvfile_processor(entity,col=None,header=True):
+    """ Use pandas to convert a list of json documents to a CSV file """
+    try:
+        jsonout = json.loads(entity)
+        df = pandas.DataFrame(jsonout)
+        outfile = StringIO()
+        df.to_csv(outfile,col=col,header=header,index=False)
+        outfile.seek(0)
+        outdata = outfile.read()
+        return outdata
+    except:
+        logging.error(sys.exc_info())
+        return "We have a problem, is the input a list of JSON objects?"    
 
 
     

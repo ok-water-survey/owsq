@@ -2,7 +2,7 @@ import os,commands,urllib2
 import ConfigParser
 from cybercom.data.catalog import datacommons #catalog
 from owsq.data.download import filezip
-from cybercom.util.convert import csvfile_processor
+#from cybercom.util.convert import csvfile_processor
 
 #set catalog user and passwd
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
@@ -19,12 +19,12 @@ def save(name,path,query):
     return save_sitedata(name,path,temp)
 def save_csv(url,path):#,filezip):
     dcommons = datacommons.toolkit(username,password)
-    data = filezip.rdb2json(url)
+    data,ordercol,head = filezip.rdb2json(url)
     fileName, fileExtension = os.path.splitext( url.split('/')[-1])
     fileExtension='.csv'
     filename= fileName + fileExtension
     f1=open(os.path.join(path,filename),'w')
-    f1.write(csvfile_processor(data))
+    f1.write(filezip.csvfile_processor(data,col=ordercol,header=head))
     f1.close()
     host=get_host(dcommons)
     return os.path.join(path.replace(host['base_directory'],host['url']),filename)
