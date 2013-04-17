@@ -24,7 +24,7 @@ def save_csv(url,path):#,filezip):
     fileExtension='.csv'
     filename= fileName + fileExtension
     f1=open(os.path.join(path,filename),'w')
-    f1.write(filezip.csvfile_processor(data,col=ordercol,header=head))
+    f1.write(filezip.csvfile_processor(data,cols=ordercol,header=head))
     f1.close()
     host=get_host(dcommons)
     return os.path.join(path.replace(host['base_directory'],host['url']),filename)
