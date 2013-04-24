@@ -22,7 +22,7 @@ def save(name,path,query):
         call(['mkdir','-p',sourcepath])
         return save_sitedata(name,sourcepath,temp)
     else:
-        return save_reports(name,os.path.join(path,source),temp)
+        return save_reports(name,path,temp)
 def save_csv(url,path,query):#,filezip):
     if query['webservice_type']!='ad':
         dcommons = datacommons.toolkit(username,password)
