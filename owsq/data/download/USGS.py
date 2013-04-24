@@ -1,4 +1,4 @@
-import os,commands,urllib2,ast
+import os,commands,urllib2#,ast
 import ConfigParser
 from cybercom.data.catalog import datacommons #catalog
 from owsq.data.download import filezip
@@ -24,6 +24,7 @@ def save(name,path,query):
     else:
         return save_reports(name,path,temp)
 def save_csv(url,path,query):#,filezip):
+    path =os.path.join(path,query['source'])
     if query['webservice_type']!='ad':
         dcommons = datacommons.toolkit(username,password)
         data,ordercol,head = filezip.rdb2json(url)
