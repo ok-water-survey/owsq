@@ -30,14 +30,23 @@ def zipurls(files,out_path):
         return out_path
     else:
         return "ERROR: expected a list of URLs"
-
-def makezip(urls, outname, outpath, overwrite=False):
+def zipfolder(folder,out_Path):
+    cwd= os.getcwd()
+    os.chdir(folder)
+    call(['zip','-r',out_Path,'./*'])
+    os.chdir(cwd)
+    return outpath
+#zip -r /Users/mstacy/archive9 ./*
+def makezip(urls, outname, outpath, overwrite=False,local=None):
     ''' Make a zipfile from a set of urls '''
     full_path = os.path.join(outpath,outname)
     #try:    
     if not os.path.exists(outname) and overwrite:
         os.remove(full_path)
-    zipurls(urls,full_path)
+    if local:
+        zipfolder(urls,full_path)       
+    else:
+        zipurls(urls,full_path)
     if os.path.exists(full_path):
         return 'http://%s/%s/%s' % ( socket.gethostname(),'request', outname) 
     else:

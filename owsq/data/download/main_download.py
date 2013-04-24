@@ -4,6 +4,7 @@ import datetime
 import ConfigParser
 from subprocess import call
 from celery.task import task
+from types import ListType
 
 #set catalog user and passwd
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
@@ -17,7 +18,7 @@ zip_name_tpl='OWS_Data_%s.zip'
 mongoHost = 'localhost'
 site_database='ows'
 @task()
-def data_download(data=None,basedir='/data/static/'):
+def data_download(data=None,basedir='/data/static/',clustered=False):
     '''
         Download multiple data sets from multiple data sources. 
             Simple cart data: Example
@@ -33,10 +34,13 @@ def data_download(data=None,basedir='/data/static/'):
     '''
     if not data:
         raise 'No Data'
-    data = json.loads(data)
+    try:
+        data = json.loads(data)
+    except:
+        data= ast.literal_eval(data)
     module_dir=os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     newDir = os.path.join(basedir,'ows_tasks/',str(data_download.request.id))
-    call(["mkdir",newDir])
+    call(["mkdir",'-p',newDir])
     os.chdir(newDir)
     logger = open(os.path.join(newDir,'task_log.txt'),'w')
     urls=[]
@@ -45,12 +49,20 @@ def data_download(data=None,basedir='/data/static/'):
         try:
             query = ast.literal_eval(value['query'])
             logger.write(log_info_tpl % (value['name'], query['parameterCd'],'STARTED'))
-            data_import=imp.load_source(item['source'],os.path.join(module_dir,item['source'] + '.py')) 
+            data_import=imp.load_source(item['source'],'%s.py' % (os.path.join(module_dir,item['source']))) 
             return_url=data_import.save(value['name'],newDir,query)
-            urls.append(return_url)
-            urls.append(data_import.save_csv(return_url,newDir))#,filezip))
+            if type(return_url) is ListType:
+                urls.extend(return_url)
+            else:
+                urls.append(return_url)
+            csv= data_import.save_csv(return_url,newDir,query)
+            if csv:
+                urls.append(csv)
             logger.write(log_info_tpl % (value['name'], query['parameterCd'],'FINISHED'))
         except Exception as inst:
             logger.write(log_warn_tpl % (str(inst)))
             raise inst
-    return filezip.makezip(urls, zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'))
+    if clustered:
+        return filezip.makezip(urls, zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'))
+    else:
+        return filezip.makezip(newDir,zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'),local=True)
