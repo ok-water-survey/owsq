@@ -34,7 +34,7 @@ def zipurls(files,out_path):
 def zipfolder(folder,out_Path):
     cwd= os.getcwd()
     os.chdir(folder)
-    call(['zip','-r',out_Path,'./*'])
+    call(['zip','-r',out_Path,'.'])
     os.chdir(cwd)
     return out_Path
 #zip -r /Users/mstacy/archive9 ./*
