@@ -33,7 +33,7 @@ def data_download(data=None,basedir='/data/static/',clustered=False):
         
     '''
     if not data:
-        raise 'No Data'
+        raise Exception('No Data')
     try:
         data = json.loads(data)
     except:
