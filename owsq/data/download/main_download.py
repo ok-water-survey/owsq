@@ -62,6 +62,7 @@ def data_download(data=None,basedir='/data/static/',clustered=False,**kwargs):
         except Exception as inst:
             logger.write(log_warn_tpl % (str(inst)))
             raise inst
+    logger.close()
     if clustered:
         return filezip.makezip(urls, zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'))
     else:
