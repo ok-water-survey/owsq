@@ -1,4 +1,4 @@
-import ast,os,json,imp,inspect
+import ast,os,json,imp,inspect,copy
 import filezip 
 import datetime
 import ConfigParser
@@ -50,7 +50,7 @@ def data_download(data,basedir='/data/static/',clustered=False,**kwargs):
             query = ast.literal_eval(value['query'])
             logger.write(log_info_tpl % (value['name'], query['parameterCd'],'STARTED'))
             data_import=imp.load_source(item['source'],'%s.py' % (os.path.join(module_dir,item['source']))) 
-            return_url=data_import.save(value['name'],newDir,query)
+            return_url=data_import.save(value['name'],newDir,copy.deepcopy(query))
             if type(return_url) is ListType:
                 urls.extend(return_url)
             else:
