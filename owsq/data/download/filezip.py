@@ -36,7 +36,7 @@ def zipfolder(folder,out_Path):
     os.chdir(folder)
     call(['zip','-r',out_Path,'./*'])
     os.chdir(cwd)
-    return outpath
+    return out_Path
 #zip -r /Users/mstacy/archive9 ./*
 def makezip(urls, outname, outpath, overwrite=False,local=None):
     ''' Make a zipfile from a set of urls '''
