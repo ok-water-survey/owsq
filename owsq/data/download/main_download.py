@@ -18,7 +18,7 @@ zip_name_tpl='OWS_Data_%s.zip'
 mongoHost = 'localhost'
 site_database='ows'
 @task()
-def data_download(data=None,basedir='/data/static/',clustered=False,**kwargs):
+def data_download(data,basedir='/data/static/',clustered=False,**kwargs):
     '''
         Download multiple data sets from multiple data sources. 
             Simple cart data: Example
