@@ -192,6 +192,8 @@ def usgs_get_sitedata(sites,type='instantaneous',params="{'format':'json'}",data
     records= dcommons.get_data('ows',{'spec':{'data_provider':data_provider},'fields':['sources']})
     sources = records[0]['sources']
     result={}
+    #http://waterservices.usgs.gov/nwis/iv/?format=json&sites=07230000&period=P1D&parameterCd=00060,00065
+    #http://waterservices.usgs.gov/nwis/iv/?format=json&sites=07230000&startDT=2013-02-01&endDT=2013-02-22&parameterCd=00060,00065
     for source,val in sources.items():
         #src_url.append(val['url'])
         #for url in src_url:
@@ -216,6 +218,6 @@ def usgs_get_sitedata(sites,type='instantaneous',params="{'format':'json'}",data
                         result[source]={'url':url,'data':data}
                 except:
                     pass
-                return json.dumps( result, indent=2 )
+            return json.dumps( result, indent=2 )
 
 
