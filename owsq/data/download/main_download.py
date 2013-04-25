@@ -1,10 +1,10 @@
-import ast,os,json,imp,inspect,copy
+import ast,os,json#,imp,inspect#,copy
 import filezip 
 import datetime
 import ConfigParser
 from subprocess import call
 from celery.task import task
-from types import ListType
+#from types import ListType
 from celery.task import subtask
 from celery.task import group
 #set catalog user and passwd
@@ -39,7 +39,7 @@ def data_download(data,basedir='/data/static/',clustered=False,**kwargs):
         data = json.loads(data)
     except:
         data= ast.literal_eval(data)
-    module_dir=os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+#    module_dir=os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     newDir = os.path.join(basedir,'ows_tasks/',str(data_download.request.id))
     call(["mkdir",'-p',newDir])
     os.chdir(newDir)
@@ -62,7 +62,14 @@ def data_download(data,basedir='/data/static/',clustered=False,**kwargs):
         stask.append(subtask(taskname_tmpl % (itm),args=(itm,),kwargs={'data_items':value}))
     job = group(stask)
     result = job.apply_async()
-    return result.join()       
+    aggregate_results=result.join()
+    urls=[]
+    for res in aggregate_results:
+        urls.extend(res)
+    if clustered:
+        return filezip.makezip(urls, zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'))
+    else:
+        return filezip.makezip(newDir,zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'),local=True)
 
 #old current version
 #    urls=[]
