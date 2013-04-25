@@ -1,4 +1,4 @@
-import ast,os,json#,imp,inspect#,copy
+import ast,os,json,socket #,imp,inspect#,copy
 import filezip 
 import datetime
 import ConfigParser
@@ -13,7 +13,9 @@ config= ConfigParser.RawConfigParser()
 config.read(cfgfile)
 username = config.get('user','username')
 password = config.get('user','password')
-log_info_tpl='INFO: Source - %s, Data Items Count: %s, Status: %s \n'
+log_info_tpl='INFO: Source - %s, Data Cart Items Submitted: %s, Status: %s \n'
+log_info_tpl1='INFO: %s,Status: %s \n'
+log_info_tpl2='INFO: %s: %s  Available: %s \n'
 log_warn_tpl='WARNING-ERROR: %s \n'
 zip_name_tpl='OWS_Data_%s.zip'
 mongoHost = 'localhost'
@@ -39,7 +41,6 @@ def data_download(data,basedir='/data/static/',clustered=False,**kwargs):
         data = json.loads(data)
     except:
         data= ast.literal_eval(data)
-#    module_dir=os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     newDir = os.path.join(basedir,'ows_tasks/',str(data_download.request.id))
     call(["mkdir",'-p',newDir])
     os.chdir(newDir)
@@ -52,47 +53,25 @@ def data_download(data,basedir='/data/static/',clustered=False,**kwargs):
             data_by_source[value['query']['source']].append(value)
         else:
             data_by_source[value['query']['source']]=[value]
-    #urls=[]
     stask=[]
     taskname_tmpl='owsq.data.download.%s.save'
     for itm, value in data_by_source.items():
         logger.write(log_info_tpl % (itm, str(len(value)),'Subtask Created'))
-        #data_import=imp.load_source(itm,'%s.py' % (os.path.join(module_dir,itm)))
-        #stask.append(data_import.save.s(itm,value))
         stask.append(subtask(taskname_tmpl % (itm),args=(newDir,itm,),kwargs={'data_items':value}))
     job = group(stask)
     result = job.apply_async()
+    logger.write(log_info_tpl1 % ('Subtask Submission','Subtask Running'))
     aggregate_results=result.join()
+    logger.write(log_info_tpl1 % ('Data query Successful','Subtasks completed'))
+    
     urls=[]
     for res in aggregate_results:
         urls.extend(res)
+    outname = zip_name_tpl % (datetime.datetime.now().isoformat())
+    zipurl ='http://%s/%s/%s' % (socket.gethostname(),'request', outname)
+    logger.write(log_info_tpl2 % ('Data Zip URL',zipurl,'30 days'))
+    logger.close()
     if clustered:
         return filezip.makezip(urls, zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'))
     else:
         return filezip.makezip(newDir,zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'),local=True)
-
-#old current version
-#    urls=[]
-#    for itm,value in data.items():
-#        item = ast.literal_eval(value['query'])
-#        try:
-#            query = ast.literal_eval(value['query'])
-#            logger.write(log_info_tpl % (value['name'], query['parameterCd'],'STARTED'))
-#            data_import=imp.load_source(item['source'],'%s.py' % (os.path.join(module_dir,item['source']))) 
-#            return_url=data_import.save(value['name'],newDir,copy.deepcopy(query))
-#            if type(return_url) is ListType:
-#                urls.extend(return_url)
-#            else:
-#                urls.append(return_url)
-#            csv= data_import.save_csv(return_url,newDir,query)
-#            if csv:
-#                urls.append(csv)
-#            logger.write(log_info_tpl % (value['name'], query['parameterCd'],'FINISHED'))
-#        except Exception as inst:
-#            logger.write(log_warn_tpl % (str(inst)))
-#            raise inst
-#    logger.close()
-#    if clustered:
-#        return filezip.makezip(urls, zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'))
-#    else:
-#        return filezip.makezip(newDir,zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'),local=True)

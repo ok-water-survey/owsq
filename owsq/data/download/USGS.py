@@ -22,7 +22,7 @@ def save(path,source,data_items=[]):#name,path,query):
     for key,value in con_query.items():
         
         if value['query']['webservice_type']!='ad':
-            name = value['name'].replace(' ','').replace('(','_').replace(')','_')
+            name = value['name'].replace(' ','').replace('(','_').replace(')','_').replace(',','') + value['query']['webservice_type']
             query = copy.deepcopy(value['query'])
             query.pop('source')
             return_url=save_sitedata(name,sourcepath,query)
@@ -34,16 +34,6 @@ def save(path,source,data_items=[]):#name,path,query):
         else:
             return_url=save_reports(sourcepath,value['query'])
             urls.extend(return_url)        
-        
-    #temp=query
-    #if query['webservice_type']!='ad':
-    #    source = temp['source']
-    #    temp.pop('source')
-    #    sourcepath = os.path.join(path,source)
-    #    call(['mkdir','-p',sourcepath])
-    #    return save_sitedata(name,sourcepath,temp)
-    #else:
-    #    return save_reports(name,path,temp)
     return urls
 def consolidate(data_items):
     cons_queries={}
@@ -59,10 +49,7 @@ def consolidate(data_items):
                 if cons_queries[node]['query']['endDT']<item['query']['endDT']:
                     cons_queries[node]['query']['endDT']=item['query']['endDT'] 
     return cons_queries
-            
-        
-def save_csv(url,path,query):#,filezip):
-    #path =os.path.join(path,query['source'])
+def save_csv(url,path,query):
     if query['webservice_type']!='ad':
         dcommons = datacommons.toolkit(username,password)
         data,ordercol,head = filezip.rdb2json(url)
@@ -109,7 +96,7 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_for
     if urlcheck:
         try:
             res=urllib2.urlopen(url)
-            filename= "%s.txt" % (name) #sites + '_parameterCd-' + query['parameterCd'] + '.txt'
+            filename= "%s.txt" % (name) 
             f1=open(os.path.join(path,filename),'w')
             f1.write(res.read())
             urlbase= host['base_directory']
@@ -124,7 +111,7 @@ def save_reports(path,query):
     dcommons = datacommons.toolkit(username,password)
     host = get_host(dcommons)
     urlbase= host['base_directory']
-    rpts=query['special']#ast.literal_eval(query['special'])
+    rpts=query['special']
     newpath= '%s/%s' % (path,'reports')
     call(['mkdir','-p',newpath])
     urls=[]
