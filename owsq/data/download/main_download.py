@@ -6,6 +6,7 @@ from subprocess import call
 from celery.task import task
 from types import ListType
 from celery.task import subtask
+from celery.task import group
 #set catalog user and passwd
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
 config= ConfigParser.RawConfigParser()
@@ -59,7 +60,9 @@ def data_download(data,basedir='/data/static/',clustered=False,**kwargs):
         #data_import=imp.load_source(itm,'%s.py' % (os.path.join(module_dir,itm)))
         #stask.append(data_import.save.s(itm,value))
         stask.append(subtask(taskname_tmpl % (itm),args=(itm,),kwargs={'data_items':value}))
-    return stask       
+    job = group(stask)
+    result = job.apply_async()
+    return result.join()       
 
 #old current version
 #    urls=[]
