@@ -3,6 +3,7 @@ import ConfigParser
 from cybercom.data.catalog import datacommons #catalog
 from owsq.data.download import filezip
 from subprocess import call
+from celery.task import task
 
 #set catalog user and passwd
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
@@ -11,18 +12,19 @@ config.read(cfgfile)
 username = config.get('user','username')
 password = config.get('user','password')
 
-
-def save(name,path,query):
+@task
+def save(source,data_items=[]):#name,path,query):
     '''Based function to all source imports in Download module'''
-    temp=query
-    if query['webservice_type']!='ad':
-        source = temp['source']
-        temp.pop('source')
-        sourcepath = os.path.join(path,source)
-        call(['mkdir','-p',sourcepath])
-        return save_sitedata(name,sourcepath,temp)
-    else:
-        return save_reports(name,path,temp)
+    #temp=query
+    #if query['webservice_type']!='ad':
+    #    source = temp['source']
+    #    temp.pop('source')
+    #    sourcepath = os.path.join(path,source)
+    #    call(['mkdir','-p',sourcepath])
+    #    return save_sitedata(name,sourcepath,temp)
+    #else:
+    #    return save_reports(name,path,temp)
+    return 'DONE'
 def save_csv(url,path,query):#,filezip):
     path =os.path.join(path,query['source'])
     if query['webservice_type']!='ad':

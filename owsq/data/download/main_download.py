@@ -5,15 +5,15 @@ import ConfigParser
 from subprocess import call
 from celery.task import task
 from types import ListType
-
+from celery.task import subtask
 #set catalog user and passwd
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
 config= ConfigParser.RawConfigParser()
 config.read(cfgfile)
 username = config.get('user','username')
 password = config.get('user','password')
-log_info_tpl='******INFO: %s ParamCode: %s - Status: %s ******\n'
-log_warn_tpl='******WARNING-ERROR: %s ******\n'
+log_info_tpl='INFO: Source - %s, Data Items Count: %s, Status: %s \n'
+log_warn_tpl='WARNING-ERROR: %s \n'
 zip_name_tpl='OWS_Data_%s.zip'
 mongoHost = 'localhost'
 site_database='ows'
@@ -43,27 +43,46 @@ def data_download(data,basedir='/data/static/',clustered=False,**kwargs):
     call(["mkdir",'-p',newDir])
     os.chdir(newDir)
     logger = open(os.path.join(newDir,'task_log.txt'),'w')
-    urls=[]
+    # consolidate sources- creates list of shopping cart items
+    data_by_source={}
     for itm,value in data.items():
-        item = ast.literal_eval(value['query'])
-        try:
-            query = ast.literal_eval(value['query'])
-            logger.write(log_info_tpl % (value['name'], query['parameterCd'],'STARTED'))
-            data_import=imp.load_source(item['source'],'%s.py' % (os.path.join(module_dir,item['source']))) 
-            return_url=data_import.save(value['name'],newDir,copy.deepcopy(query))
-            if type(return_url) is ListType:
-                urls.extend(return_url)
-            else:
-                urls.append(return_url)
-            csv= data_import.save_csv(return_url,newDir,query)
-            if csv:
-                urls.append(csv)
-            logger.write(log_info_tpl % (value['name'], query['parameterCd'],'FINISHED'))
-        except Exception as inst:
-            logger.write(log_warn_tpl % (str(inst)))
-            raise inst
-    logger.close()
-    if clustered:
-        return filezip.makezip(urls, zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'))
-    else:
-        return filezip.makezip(newDir,zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'),local=True)
+        value['query'] = ast.literal_eval(value['query'])
+        if value['query']['source'] in data_by_source:
+            data_by_source[value['query']['source']].append(value)
+        else:
+            data_by_source[value['query']['source']]=[value]
+    #urls=[]
+    stask=[]
+    taskname_tmpl='owsq.data.download.%s.save'
+    for itm, value in data_by_source.items():
+        logger.write(log_info_tpl % (itm, str(len(value)),'Subtask Created'))
+        #data_import=imp.load_source(itm,'%s.py' % (os.path.join(module_dir,itm)))
+        #stask.append(data_import.save.s(itm,value))
+        stask.append(subtask(taskname_tmpl % (itm),args=(itm,),kwargs={'data_items':value}))
+    return stask       
+
+#old current version
+#    urls=[]
+#    for itm,value in data.items():
+#        item = ast.literal_eval(value['query'])
+#        try:
+#            query = ast.literal_eval(value['query'])
+#            logger.write(log_info_tpl % (value['name'], query['parameterCd'],'STARTED'))
+#            data_import=imp.load_source(item['source'],'%s.py' % (os.path.join(module_dir,item['source']))) 
+#            return_url=data_import.save(value['name'],newDir,copy.deepcopy(query))
+#            if type(return_url) is ListType:
+#                urls.extend(return_url)
+#            else:
+#                urls.append(return_url)
+#            csv= data_import.save_csv(return_url,newDir,query)
+#            if csv:
+#                urls.append(csv)
+#            logger.write(log_info_tpl % (value['name'], query['parameterCd'],'FINISHED'))
+#        except Exception as inst:
+#            logger.write(log_warn_tpl % (str(inst)))
+#            raise inst
+#    logger.close()
+#    if clustered:
+#        return filezip.makezip(urls, zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'))
+#    else:
+#        return filezip.makezip(newDir,zip_name_tpl % (datetime.datetime.now().isoformat()), os.path.join(basedir,'request/'),local=True)
