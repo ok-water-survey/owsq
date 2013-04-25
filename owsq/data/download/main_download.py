@@ -59,7 +59,7 @@ def data_download(data,basedir='/data/static/',clustered=False,**kwargs):
         logger.write(log_info_tpl % (itm, str(len(value)),'Subtask Created'))
         #data_import=imp.load_source(itm,'%s.py' % (os.path.join(module_dir,itm)))
         #stask.append(data_import.save.s(itm,value))
-        stask.append(subtask(taskname_tmpl % (itm),args=(itm,),kwargs={'data_items':value}))
+        stask.append(subtask(taskname_tmpl % (itm),args=(newDir,itm,),kwargs={'data_items':value}))
     job = group(stask)
     result = job.apply_async()
     aggregate_results=result.join()
