@@ -42,12 +42,14 @@ def consolidate(data_items):
         if node not in cons_queries:
             cons_queries[node]=item
         else:
-            if item['query']['webservice_type']!='ad':
+            if item['query']['webservice_type']!='ad' and item['query']['webservice_type']!='qw':
                 cons_queries[node]['query']['parameterCd']="%s%s%s" % (cons_queries[node]['query']['parameterCd'],",",item['query']['parameterCd'])
                 if cons_queries[node]['query']['startDT']>item['query']['startDT']:
                     cons_queries[node]['query']['startDT']=item['query']['startDT']
                 if cons_queries[node]['query']['endDT']<item['query']['endDT']:
                     cons_queries[node]['query']['endDT']=item['query']['endDT'] 
+            else if item['query']['webservice_type']=='qw':
+                cons_queries[node]['query']['pCode']="%s%s%s" % (cons_queries[node]['query']['pCode'],";",item['query']['pCode'])
     return cons_queries
 def save_csv(url,path,query):
     if query['webservice_type']!='ad':
@@ -98,7 +100,9 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_for
             res=urllib2.urlopen(url)
             filename= "%s.txt" % (name) 
             f1=open(os.path.join(path,filename),'w')
+            print url
             f1.write(res.read())
+            print 'after read()'
             urlbase= host['base_directory']
             return os.path.join(path.replace(urlbase ,host['url']),filename)
         except Exception as inst:
