@@ -54,7 +54,7 @@ def makezip(urls, outname, outpath, overwrite=False,local=None):
         return 'Couldn\'t write zipfile'
     #except:
     #    return "Error writing zip file"
-def rdb2json(url):
+def rdb2json(url,skip=None):
     temp='#'
     head=''
     f1=urlopen(url)
@@ -62,7 +62,8 @@ def rdb2json(url):
         temp=f1.readline()
         if temp[0]!='#':
             head = temp.strip('\r\n').split('\t')
-    f1.readline()
+    if not skip:
+        f1.readline()
     data=[]
     for row in f1:
         temp=row.strip('\r\n').split('\t')

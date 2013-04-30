@@ -40,6 +40,8 @@ def consolidate(data_items):
     for item in data_items:
         node="%s_%s" % (item['query']['webservice_type'],item['query']['sites'])
         if node not in cons_queries:
+            if item['query']['pCode']=='':
+                item['query'].pop('pCode')
             cons_queries[node]=item
         else:
             if item['query']['webservice_type']!='ad' and item['query']['webservice_type']!='qw':
@@ -49,12 +51,19 @@ def consolidate(data_items):
                 if cons_queries[node]['query']['endDT']<item['query']['endDT']:
                     cons_queries[node]['query']['endDT']=item['query']['endDT'] 
             elif item['query']['webservice_type']=='qw':
-                cons_queries[node]['query']['pCode']="%s%s%s" % (cons_queries[node]['query']['pCode'],";",item['query']['pCode'])
+                if 'pCode' in cons_queries[node]['query']:
+                    if item['query']['pCode']=='':
+                        cons_queries[node]['query'].pop('pCode')
+                    else:
+                        cons_queries[node]['query']['pCode']="%s%s%s" % (cons_queries[node]['query']['pCode'],";",item['query']['pCode'])
     return cons_queries
 def save_csv(url,path,query):
     if query['webservice_type']!='ad':
         dcommons = datacommons.toolkit(username,password)
-        data,ordercol,head = filezip.rdb2json(url)
+        if query['webservice_type']!='qw':
+            data,ordercol,head = filezip.rdb2json(url)
+        else:
+            data,ordercol,head = filezip.rdb2json(url,skip='no')
         fileName, fileExtension = os.path.splitext( url.split('/')[-1])
         fileExtension='.csv'
         filename= fileName + fileExtension
