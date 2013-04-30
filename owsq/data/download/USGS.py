@@ -116,7 +116,7 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_for
     if qtype=='qw':
         url =metadata['webservice'] + temp
     else:
-        url =metadata['webservice'] + temp + 'sites=' + sites
+        url =metadata['webservice'] + temp + '&sites=' + sites
     urlcheck = commands.getoutput("wget --spider '" + url + "' 2>&1| grep 'Remote file exists'")
     if urlcheck:
         try:
