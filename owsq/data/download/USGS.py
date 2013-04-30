@@ -123,7 +123,7 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_for
             res=urllib2.urlopen(url)
             filename= "%s.txt" % (name) 
             f1=open(os.path.join(path,filename),'w')
-            #print url
+            print url
             f1.write(res.read())
             #print 'after read()'
             urlbase= host['base_directory']
