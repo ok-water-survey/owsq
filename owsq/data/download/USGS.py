@@ -99,7 +99,7 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_for
     temp=''
     for k,v in params.items():
         if temp=='':
-            temp = "%s%s%s" % (temp,k,"=",v)
+            temp = "%s%s%s" % (k,"=",v)
         else:
             temp = "%s%s%s%s" % (temp,"&",k,"=",v)
         #temp= temp + k + "=" + v + '&'
