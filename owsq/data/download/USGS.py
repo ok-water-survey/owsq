@@ -40,8 +40,9 @@ def consolidate(data_items):
     for item in data_items:
         node="%s_%s" % (item['query']['webservice_type'],item['query']['sites'])
         if node not in cons_queries:
-            if item['query']['pCode']=='':
-                item['query'].pop('pCode')
+            if 'pCode' in item['query']:
+                if item['query']['pCode']=='':
+                    item['query'].pop('pCode')
             cons_queries[node]=item
         else:
             if item['query']['webservice_type']!='ad' and item['query']['webservice_type']!='qw':
@@ -122,9 +123,9 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_for
             res=urllib2.urlopen(url)
             filename= "%s.txt" % (name) 
             f1=open(os.path.join(path,filename),'w')
-            print url
+            #print url
             f1.write(res.read())
-            print 'after read()'
+            #print 'after read()'
             urlbase= host['base_directory']
             return os.path.join(path.replace(urlbase ,host['url']),filename)
         except Exception as inst:
