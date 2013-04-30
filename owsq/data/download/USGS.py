@@ -89,11 +89,24 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_for
     params.pop('sites')
     #Setup metadata web service from data catalog
     metadata = sources[query['webservice_type']]
-    params.pop('webservice_type')
+    qtype=query['webservice_type']
+    if qtype=='qw':
+        params.pop('webservice_type')
+        params.pop('parameterCd')
+        params.pop('format')
+    else:
+        params.pop('webservice_type')
     temp=''
     for k,v in params.items():
-        temp= temp + k + "=" + v + '&'
-    url =metadata['webservice'] + temp + 'sites=' + sites
+        if temp=='':
+            temp = "%s%s%s" % (temp,k,"=",v)
+        else:
+            temp = "%s%s%s%s" % (temp,"&",k,"=",v)
+        #temp= temp + k + "=" + v + '&'
+    if qtype=='qw':
+        url =metadata['webservice'] + temp
+    else:
+        url =metadata['webservice'] + temp + 'sites=' + sites
     urlcheck = commands.getoutput("wget --spider '" + url + "' 2>&1| grep 'Remote file exists'")
     if urlcheck:
         try:
