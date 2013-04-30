@@ -48,7 +48,7 @@ def consolidate(data_items):
                     cons_queries[node]['query']['startDT']=item['query']['startDT']
                 if cons_queries[node]['query']['endDT']<item['query']['endDT']:
                     cons_queries[node]['query']['endDT']=item['query']['endDT'] 
-            else if item['query']['webservice_type']=='qw':
+            elif item['query']['webservice_type']=='qw':
                 cons_queries[node]['query']['pCode']="%s%s%s" % (cons_queries[node]['query']['pCode'],";",item['query']['pCode'])
     return cons_queries
 def save_csv(url,path,query):
