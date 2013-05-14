@@ -76,5 +76,5 @@ def save_sitedata(path,query):
         name=url.split('/')[-4]
         result_path = "%s/%s.txt" % (newpath,name)
         call(['wget','-O',result_path,url])
-        urls.append(os.path.join(result_path.replace(urlbase , host['url']),name))
+        urls.append(result_path.replace(urlbase , host['url']))
     return urls
