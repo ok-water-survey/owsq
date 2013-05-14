@@ -74,6 +74,7 @@ def save_sitedata(path,query):
     #.split('/')[-4]
     for url  in rpts:
         name=url.split('/')[-4]
-        call(['wget','-O',"%s/%s.txt" % (newpath,name),url])
-        urls.append(os.path.join(path.replace(urlbase , host['url']),name))
+        result_path = "%s/%s.txt" % (newpath,name)
+        call(['wget','-O',result_path,url])
+        urls.append(os.path.join(result_path.replace(urlbase , host['url']),name))
     return urls
