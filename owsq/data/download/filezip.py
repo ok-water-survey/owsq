@@ -72,6 +72,7 @@ def rdb2json(url,skip=None):
 def meso2json(urls,skip=2):
     data=[]
     for url in urls:
+        print url
         f1=urlopen(url)
         for x in range(skip):
             f1.readline()
