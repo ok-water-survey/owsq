@@ -6,7 +6,7 @@ from StringIO import StringIO
 from subprocess import call
 import socket,logging,pandas
 import os,json,sys
-
+import shlex
 
 def notify_email(toaddress, subject, bodytext):
     import smtplib
@@ -79,7 +79,8 @@ def meso2json(urls,skip=2):
         head = shlex.split(temp)
         for row in f1:
             temp= shlex.split(row)
-            data.append(dict(zip(head,temp)))
+            if len(temp)==len(head):
+                data.append(dict(zip(head,temp)))
         f1.close()
     return json.dumps(data),head,True            
                 
