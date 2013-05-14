@@ -69,7 +69,20 @@ def rdb2json(url,skip=None):
         temp=row.strip('\r\n').split('\t')
         data.append(dict(zip(head,temp)))
     return json.dumps(data),head,True
-    
+def meso2json(urls,skip=2):
+    data=[]
+    for url in urls:
+        f1=urlopen(url)
+        for x in range(skip):
+            f1.readline()
+        temp = f1.readline()
+        head = shlex.split(temp)
+        for row in f1:
+            temp= shlex.split(row)
+            data.append(dict(zip(head,temp)))
+        f1.close()
+    return json.dumps(data),head,True            
+                
 def csvfile_processor(entity,cols=None,header=True):
     """ Use pandas to convert a list of json documents to a CSV file """
     try:

@@ -21,16 +21,11 @@ def save(path,source,data_items=[]):#name,path,query):
     call(['mkdir','-p',sourcepath])
     urls=[]
     for key,value in con_query.items():
-        #name = value['name'].replace(' ','').replace('(','_').replace(')','').replace(',','') 
         return_url= save_sitedata(sourcepath,value['query'])
         urls.extend(return_url)
-        #query = copy.deepcopy(value['query'])
-        #return_url=save_csv(return_url,sourcepath,query)
-           # if return_url:
-           #     urls.append(return_url)
-        #else:
-        #    return_url=save_reports(sourcepath,value['query'])
-        #    urls.extend(return_url)        
+        name = value['name'].replace(' ','').replace('(','_').replace(')','').replace(',','') +'.csv'
+        return_url=save_csv(return_url,sourcepath,name)
+        urls.append(return_url)
     return urls
 def consolidate(data_items):
     cons_queries={}
@@ -44,22 +39,15 @@ def consolidate(data_items):
             if cons_queries[node]['query']['endDT']<item['query']['endDT']:
                 cons_queries[node]['query']['endDT']=item['query']['endDT'] 
     return cons_queries
-def save_csv(url,path,query):
-    if query['webservice_type']!='ad':
-        dcommons = datacommons.toolkit(username,password)
-        if query['webservice_type']!='qw':
-            data,ordercol,head = filezip.rdb2json(url)
-        else:
-            data,ordercol,head = filezip.rdb2json(url,skip='no')
-        fileName, fileExtension = os.path.splitext( url.split('/')[-1])
-        fileExtension='.csv'
-        filename= fileName + fileExtension
-        f1=open(os.path.join(path,filename),'w')
-        f1.write(filezip.csvfile_processor(data,cols=ordercol,header=head))
-        f1.close()
-        host=get_host(dcommons)
-        return os.path.join(path.replace(host['base_directory'],host['url']),filename)
-    return None
+def save_csv(urls,path,name):
+    dcommons = datacommons.toolkit(username,password)
+    data,ordercol,head = filezip.meso2json(urls)
+    f1=open(os.path.join(path,name),'w')
+    f1.write(filezip.csvfile_processor(data,cols=ordercol,header=head))
+    f1.close()
+    host=get_host(dcommons)
+    return os.path.join(path.replace(host['base_directory'],host['url']),name)
+ 
 def get_host(dcommons):
     hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
     for item in(item for item in hosts if item['host']==os.uname()[1]):
