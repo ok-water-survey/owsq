@@ -82,7 +82,7 @@ def meso2json(urls,skip=2):
         #header
         temp = f1.readline()
         head = shlex.split(temp)
-        head.insert(2,'observed_datetime')
+        head.insert(2,'UTC_DATETIME')
         for row in f1:
             temp= shlex.split(row)
             if len(temp)+1==len(head):
