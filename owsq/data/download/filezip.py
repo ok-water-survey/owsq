@@ -72,15 +72,23 @@ def rdb2json(url,skip=None):
 def meso2json(urls,skip=2):
     data=[]
     for url in urls:
-        print url
+        #print url
         f1=urlopen(url)
-        for x in range(skip):
-            f1.readline()
+        #for x in range(skip):
+        f1.readline()#copyright line
+        dtc=shlex.split(f1.readline())#datetime
+        dtc.pop(0)#pop column count
+        dt =datetime(int(dtc[0]),int(dtc[1]),int(dtc[2]),int(dtc[3]),int(dtc[4]),int(dtc[5]))
+        #header
         temp = f1.readline()
         head = shlex.split(temp)
+        head.insert(2,'observed_datetime')
         for row in f1:
             temp= shlex.split(row)
-            if len(temp)==len(head):
+            if len(temp)+1==len(head):
+                diff = timedelta(minutes=int(temp[2]))
+                newdt = dt + diff
+                temp.insert(2,newdt.isoformat() + 'Z')
                 data.append(dict(zip(head,temp)))
         f1.close()
     return json.dumps(data),head,True            
