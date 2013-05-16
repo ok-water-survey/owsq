@@ -25,9 +25,12 @@ def transform_point(lat,lon, t_srs=config.TARGET_PROJECTION, s_srs=config.SOURCE
     p2 = pyproj.Proj(t_srs)
     x, y = pyproj.transform(p1, p2,lon,lat)
     return x,y
-def intersect_point(objshape,lat,lon, t_srs=config.TARGET_PROJECTION, s_srs=config.SOURCE_PROJECTION):
+def intersect_point(objshape,lat,lon, t_srs=config.TARGET_PROJECTION, s_srs=config.SOURCE_PROJECTION,transform=True):
     '''Transform point checks if Point intersects objshape '''
-    x,y = transform_point(lat,lon,t_srs,s_srs)
+    if transform==True:
+        x,y = transform_point(lat,lon,t_srs,s_srs)
+    else:
+        x,y = lat,lon
     point = Point(x,y)
     if point.intersects(shape(objshape)):
         return True

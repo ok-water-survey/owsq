@@ -59,6 +59,7 @@ def owrb_sync_geojson(data_type='groundwater',database=config.owrb_database,tmp_
 def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_collection):
     #dcommons = datacommons.toolkit(username,password)
     db=Connection(config.mongo_host)
+    db[database][collection].remove()
     #set geometries
     polydata=[]
     for itm in db.ows.watersheds.find():
@@ -75,7 +76,7 @@ def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_
         row_data['geometry'] = site['geometry']
         for poly in polydata:
             s= poly['geometry']
-            if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
+            if gis_tools.intersect_point(s,row_data['geometry']['coordinates'][1],row_data['geometry']['coordinates'][0],transform=False):
                 if 'HUC_4' in poly['properties']:
                     #print 'HUC 4: ' + poly['properties']['HUC_4']
                     row_data["huc_4"]=poly['properties']['HUC_4']
@@ -85,7 +86,7 @@ def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_
         #set aquifer data
         for poly in aquifer_poly:
             s= poly['geometry']
-            if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
+            if gis_tools.intersect_point(s,row_data['geometry']['coordinates'][1],row_data['geometry']['coordinates'][0],transform=False):
                 row_data["aquifer"]=poly['properties']['NAME']
                 print poly['properties']['NAME']
                 break
