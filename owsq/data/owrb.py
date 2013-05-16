@@ -74,10 +74,15 @@ def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_
     data= json.loads(res.read())
     stask=[]
     taskname_tmpl='owsq.data.owrb.owrb_well_logs_sub'
+    i =0
     for site in data["features"]:
+        if i>100:
+            break
+        i=i+1
         stask.append(subtask(taskname_tmpl,args=(site,polydata,aquifer_poly,database,collection,),kwargs={}))
     job = group(stask)
     result = job.apply_async() 
+    aggregate_results=result.join()
     return "Success- All Well logs stored locally in Mongo(%s, %s)" % (database,collection)  
         #row_data = {}
         #row_data = site["properties"]
