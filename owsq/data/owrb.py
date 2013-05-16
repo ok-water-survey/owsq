@@ -8,6 +8,8 @@ from pymongo import Connection
 from cybercom.data.catalog import datacommons #catalog
 from owsq import config
 from owsq.util import gis_tools
+from celery.task import subtask
+from celery.task import group
 #set catalog user and passwd
 #cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
 #configs= ConfigParser.RawConfigParser()
@@ -70,24 +72,59 @@ def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_
     #load owrb well logs
     res=urllib2.urlopen(config.well_logs_url)
     data= json.loads(res.read())
+    stask=[]
+    taskname_tmpl='owsq.data.owrb.owrb_well_logs_sub'
     for site in data["features"]:
-        row_data = {}
-        row_data = site["properties"]
-        row_data['geometry'] = site['geometry']
-        for poly in polydata:
-            s= poly['geometry']
-            if gis_tools.intersect_point(s,row_data['geometry']['coordinates'][1],row_data['geometry']['coordinates'][0],transform=False):
-                if 'HUC_4' in poly['properties']:
-                    #print 'HUC 4: ' + poly['properties']['HUC_4']
-                    row_data["huc_4"]=poly['properties']['HUC_4']
-                if 'HUC_8' in poly['properties']:
+        stask.append(subtask(taskname_tmpl,args=(site,polydata,aquifer_poly,database,collection,),kwargs={}))
+    job = group(stask)
+    result = job.apply_async() 
+    return "Success- All Well logs stored locally in Mongo(%s, %s)" % (database,collection)  
+        #row_data = {}
+        #row_data = site["properties"]
+        #r#ow_data['geometry'] = site['geometry']
+        #for poly in polydata:
+        #    s= poly['geometry']
+        #    if gis_tools.intersect_point(s,row_data['geometry']['coordinates'][1],row_data['geometry']['coordinates'][0],transform=False):
+        #        if 'HUC_4' in poly['properties']:
+        #            #print 'HUC 4: ' + poly['properties']['HUC_4']
+        #            row_data["huc_4"]=poly['properties']['HUC_4']
+        #        if 'HUC_8' in poly['properties']:
                     #print 'HUC 8: ' + poly['properties']['HUC_8']
-                    row_data["huc_8"]=poly['properties']['HUC_8']
+        #            row_data["huc_8"]=poly['properties']['HUC_8']
         #set aquifer data
-        for poly in aquifer_poly:
-            s= poly['geometry']
-            if gis_tools.intersect_point(s,row_data['geometry']['coordinates'][1],row_data['geometry']['coordinates'][0],transform=False):
-                row_data["aquifer"]=poly['properties']['NAME']
-                print poly['properties']['NAME']
-                break
-        db[database][collection].save(row_data)
+        #for poly in aquifer_poly:
+        #    s= poly['geometry']
+        #    if gis_tools.intersect_point(s,row_data['geometry']['coordinates'][1],row_data['geometry']['coordinates'][0],transform=False):
+        #        row_data["aquifer"]=poly['properties']['NAME']
+        #        print poly['properties']['NAME']
+        #        break
+        #db[database][collection].save(row_data)
+@task()
+def owrb_well_logs_sub(site,polydata,aquifer_poly,database,collection, **kwargs):
+    db=Connection(config.mongo_host)
+    row_data = {}
+    row_data = site["properties"]
+    row_data['geometry'] = site['geometry']
+    for poly in polydata:
+        s= poly['geometry']
+        if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
+            if 'HUC_4' in poly['properties']:
+                #print 'HUC 4: ' + poly['properties']['HUC_4']
+                row_data["huc_4"]=poly['properties']['HUC_4']
+            if 'HUC_8' in poly['properties']:
+                #print 'HUC 8: ' + poly['properties']['HUC_8']
+                row_data["huc_8"]=poly['properties']['HUC_8']
+    #set aquifer data
+    for poly in aquifer_poly:
+        s= poly['geometry']
+        if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
+            row_data["aquifer"]=poly['properties']['NAME']
+            print poly['properties']['NAME']
+            break
+    db[database][collection].save(row_data)
+    
+
+
+
+
+
