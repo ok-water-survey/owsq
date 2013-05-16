@@ -7,7 +7,7 @@ from pymongo import Connection
 #from datetime import datetime,timedelta
 from cybercom.data.catalog import datacommons #catalog
 from owsq import config
-
+from owsq.util import gis_tools
 #set catalog user and passwd
 #cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
 #configs= ConfigParser.RawConfigParser()
