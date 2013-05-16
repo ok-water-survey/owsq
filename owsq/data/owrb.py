@@ -68,7 +68,7 @@ def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_
         aquifer_poly.append(itm)
     #load owrb well logs
     res=urllib2.urlopen(config.well_logs_url)
-    data= json.loads(res)
+    data= json.loads(res.read())
     for site in data["features"]:
         row_data = {}
         row_data = site["properties"]
