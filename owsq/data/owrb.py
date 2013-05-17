@@ -17,6 +17,13 @@ from celery.task import group
 username = config.catalog_username #s.get('user','username')
 password = config.catalog_password #s.get('user','password')
 
+#set geometries
+polydata=[]
+for itm in db.ows.watersheds.find():
+  polydata.append(itm)
+aquifer_poly=[]
+for itm in db.ows.aquifers.find():
+  aquifer_poly.append(itm)
 #set Mongo Host and default database
 #mongoHost = 'localhost'
 #site_database='ows'
@@ -58,7 +65,7 @@ def owrb_sync_geojson(data_type='groundwater',database=config.owrb_database,tmp_
     return json.dumps( result, indent=2 )
 
 @task()
-def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_collection):
+def owrb_well_logs_save(database=config.owrb_database,collection=config.owrb_welllog_collection):
     #dcommons = datacommons.toolkit(username,password)
     db=Connection(config.mongo_host)
     db[database][collection].remove()
@@ -74,23 +81,28 @@ def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_
     data= json.loads(res.read())
     stask=[]
     taskname_tmpl='owsq.data.owrb.owrb_well_logs_sub'
-    i =1
+    i =0
     items=[]
     for site in data["features"]:
-        #stask.append(subtask(taskname_tmpl,args=(site,polydata,aquifer_poly,database,collection,),kwargs={}))
-        items.append(site)
-
-        if i>=1000:
-            stask.append(subtask(taskname_tmpl,args=(list(items),polydata,aquifer_poly,database,collection,),kwargs={}))
-            items=[]
-            print i
-            i=1            
+        row_data = {}
+        row_data = site["properties"]
+        row_data['geometry'] = site['geometry']
+        db[database][collection].save(row_data)
         i=i+1
         #stask.append(subtask(taskname_tmpl,args=(site,polydata,aquifer_poly,database,collection,),kwargs={}))
-    job = group(stask)
-    result = job.apply_async() 
-    aggregate_results=result.join()
-    return "Success- All Well logs stored locally in Mongo(%s, %s)" % (database,collection)  
+        #items.append(site)
+
+        #if i>=1000:
+        #    stask.append(subtask(taskname_tmpl,args=(list(items),polydata,aquifer_poly,database,collection,),kwargs={}))
+        #    items=[]
+        #    print i
+        #    i=1            
+        #i=i+1
+        #stask.append(subtask(taskname_tmpl,args=(site,polydata,aquifer_poly,database,collection,),kwargs={}))
+    #job = group(stask)
+    #result = job.apply_async() 
+    #aggregate_results=result.join()
+    return "Success- All Well logs stored locally in Mongo(%s, %s) Total = %d" % (database,collection,i)  
         #row_data = {}
         #row_data = site["properties"]
         #r#ow_data['geometry'] = site['geometry']
@@ -112,12 +124,14 @@ def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_
         #        break
         #db[database][collection].save(row_data)
 @task()
-def owrb_well_logs_sub(lsite,polydata,aquifer_poly,database,collection, **kwargs):
+def owrb_well_logs_portal(database=config.owrb_database, collection=config.owrb_welllog_collection, **kwargs):
     db=Connection(config.mongo_host)
-    for site in lsite:
-        row_data = {}
-        row_data = site["properties"]
-        row_data['geometry'] = site['geometry']
+    progress = 0
+    total=0
+    for row_data in db[database][collection].find():
+        #row_data = {}
+        #row_data = site["properties"]
+        #row_data['geometry'] = site['geometry']
         for poly in polydata:
             s= poly['geometry']
             if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
@@ -135,9 +149,15 @@ def owrb_well_logs_sub(lsite,polydata,aquifer_poly,database,collection, **kwargs
                 print poly['properties']['NAME']
                 break
         db[database][collection].save(row_data)
-    
+        progress=progress +1
+        if progress >=1000:
+            total = total + progress
+            progress = 0
+            print 'Records Complete %d' % (total)
 
-
-
-
+    return 'Records Complete %d' % (total + progress)
+@task()
+def owrb_well_logs_sync():
+    result=owrb_well_logs_save.delay(callback=subtask(owrb_well_logs_portal))
+    return result
 
