@@ -8,26 +8,11 @@ from pymongo import Connection
 from cybercom.data.catalog import datacommons #catalog
 from owsq import config
 from owsq.util import gis_tools
-from celery.task import subtask
-from celery.task import group
+#from celery.task import subtask
+#from celery.task import group
 #set catalog user and passwd
-#cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
-#configs= ConfigParser.RawConfigParser()
-#configs.read(cfgfile)
 username = config.catalog_username #s.get('user','username')
 password = config.catalog_password #s.get('user','password')
-
-#set geometries
-db=Connection(config.mongo_host)
-polydata=[]
-for itm in db.ows.watersheds.find():
-  polydata.append(itm)
-aquifer_poly=[]
-for itm in db.ows.aquifers.find():
-  aquifer_poly.append(itm)
-#set Mongo Host and default database
-#mongoHost = 'localhost'
-#site_database='ows'
 
 @task()
 def owrb_sync_geojson(data_type='groundwater',database=config.owrb_database,tmp_fldr='/data/owrb/',data_provider='OWRB',delete=True):
@@ -80,10 +65,10 @@ def owrb_well_logs_save(database=config.owrb_database,collection=config.owrb_wel
     #load owrb well logs
     res=urllib2.urlopen(config.well_logs_url)
     data= json.loads(res.read())
-    stask=[]
-    taskname_tmpl='owsq.data.owrb.owrb_well_logs_sub'
+#    stask=[]
+#    taskname_tmpl='owsq.data.owrb.owrb_well_logs_sub'
     i =0
-    items=[]
+#    items=[]
     for site in data["features"]:
         row_data = {}
         row_data = site["properties"]
@@ -127,12 +112,16 @@ def owrb_well_logs_save(database=config.owrb_database,collection=config.owrb_wel
 @task()
 def owrb_well_logs_portal(database=config.owrb_database, collection=config.owrb_welllog_collection, **kwargs):
     db=Connection(config.mongo_host)
+    #set watershed and aquifer geodata
+    polydata=[]
+    for itm in db.ows.watersheds.find():
+        polydata.append(itm)
+    aquifer_poly=[]
+    for itm in db.ows.aquifers.find():
+        aquifer_poly.append(itm) 
     progress = 0
     total=0
     for row_data in db[database][collection].find():
-        #row_data = {}
-        #row_data = site["properties"]
-        #row_data['geometry'] = site['geometry']
         for poly in polydata:
             s= poly['geometry']
             if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
@@ -155,10 +144,9 @@ def owrb_well_logs_portal(database=config.owrb_database, collection=config.owrb_
             total = total + progress
             progress = 0
             print 'Records Complete %d' % (total)
-
     return 'Records Complete %d' % (total + progress)
-@task()
-def owrb_well_logs_sync():
-    result=owrb_well_logs_save.delay(callback=subtask(owrb_well_logs_portal))
-    return result
+#@task()
+#def owrb_well_logs_sync():
+#    result=owrb_well_logs_save.delay(callback=subtask(owrb_well_logs_portal))
+#    return result
 
