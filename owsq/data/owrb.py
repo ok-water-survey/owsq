@@ -18,6 +18,7 @@ username = config.catalog_username #s.get('user','username')
 password = config.catalog_password #s.get('user','password')
 
 #set geometries
+db=Connection(config.mongo_host)
 polydata=[]
 for itm in db.ows.watersheds.find():
   polydata.append(itm)
