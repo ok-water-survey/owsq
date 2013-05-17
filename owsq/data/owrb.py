@@ -74,12 +74,19 @@ def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_
     data= json.loads(res.read())
     stask=[]
     taskname_tmpl='owsq.data.owrb.owrb_well_logs_sub'
-    i =0
+    i =1
+    items=[]
     for site in data["features"]:
-        if i>100:
-            break
+        #stask.append(subtask(taskname_tmpl,args=(site,polydata,aquifer_poly,database,collection,),kwargs={}))
+        items.append(site)
+
+        if i>=1000:
+            stask.append(subtask(taskname_tmpl,args=(list(items),polydata,aquifer_poly,database,collection,),kwargs={}))
+            items=[]
+            print i
+            i=1            
         i=i+1
-        stask.append(subtask(taskname_tmpl,args=(site,polydata,aquifer_poly,database,collection,),kwargs={}))
+        #stask.append(subtask(taskname_tmpl,args=(site,polydata,aquifer_poly,database,collection,),kwargs={}))
     job = group(stask)
     result = job.apply_async() 
     aggregate_results=result.join()
@@ -105,28 +112,29 @@ def owrb_well_logs(database=config.owrb_database,collection=config.owrb_welllog_
         #        break
         #db[database][collection].save(row_data)
 @task()
-def owrb_well_logs_sub(site,polydata,aquifer_poly,database,collection, **kwargs):
+def owrb_well_logs_sub(lsite,polydata,aquifer_poly,database,collection, **kwargs):
     db=Connection(config.mongo_host)
-    row_data = {}
-    row_data = site["properties"]
-    row_data['geometry'] = site['geometry']
-    for poly in polydata:
-        s= poly['geometry']
-        if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
-            if 'HUC_4' in poly['properties']:
-                #print 'HUC 4: ' + poly['properties']['HUC_4']
-                row_data["huc_4"]=poly['properties']['HUC_4']
-            if 'HUC_8' in poly['properties']:
-                #print 'HUC 8: ' + poly['properties']['HUC_8']
-                row_data["huc_8"]=poly['properties']['HUC_8']
-    #set aquifer data
-    for poly in aquifer_poly:
-        s= poly['geometry']
-        if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
-            row_data["aquifer"]=poly['properties']['NAME']
-            print poly['properties']['NAME']
-            break
-    db[database][collection].save(row_data)
+    for site in lsite:
+        row_data = {}
+        row_data = site["properties"]
+        row_data['geometry'] = site['geometry']
+        for poly in polydata:
+            s= poly['geometry']
+            if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
+                if 'HUC_4' in poly['properties']:
+                    #print 'HUC 4: ' + poly['properties']['HUC_4']
+                    row_data["huc_4"]=poly['properties']['HUC_4']
+                if 'HUC_8' in poly['properties']:
+                    #print 'HUC 8: ' + poly['properties']['HUC_8']
+                    row_data["huc_8"]=poly['properties']['HUC_8']
+        #set aquifer data
+        for poly in aquifer_poly:
+            s= poly['geometry']
+            if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
+                row_data["aquifer"]=poly['properties']['NAME']
+                print poly['properties']['NAME']
+                break
+        db[database][collection].save(row_data)
     
 
 
