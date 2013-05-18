@@ -74,7 +74,7 @@ def owrb_well_logs_save(database=config.owrb_database,collection=config.owrb_wel
         row_data = site["properties"]
         row_data['geometry'] = site['geometry']
         rowid=db[database][collection].save(row_data)
-        stask.append(subtask(taskname_tmpl,args=(rowid)))
+        stask.append(subtask(taskname_tmpl,args=(rowid,)))
     print 'Done with inserts, starting group jobs'
     job = group(stask)
     result = job.apply_async() 
