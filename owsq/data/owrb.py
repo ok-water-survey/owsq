@@ -101,6 +101,8 @@ def owrb_well_logs_portal(rowid,database=config.owrb_database, collection=config
             aquifer_poly.append(itm)
         aquifer = aquifer_poly 
     row_data = db[database][collection].find_one({'_id':rowid})
+    row_data["huc_4"]=''
+    row_data["huc_8"]=''
     for poly in polydata:
         s= poly['geometry']
         if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
@@ -109,6 +111,7 @@ def owrb_well_logs_portal(rowid,database=config.owrb_database, collection=config
             if 'HUC_8' in poly['properties']:
                 row_data["huc_8"]=poly['properties']['HUC_8']
     #set aquifer data
+    row_data["aquifer"]=''
     for poly in aquifer_poly:
         s= poly['geometry']
         if gis_tools.intersect_point(s,row_data['LATITUDE'],row_data['LONGITUDE']):
