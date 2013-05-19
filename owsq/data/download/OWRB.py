@@ -1,4 +1,4 @@
-import os,urllib2
+import os,urllib2,urllib
 #import ConfigParser
 from cybercom.data.catalog import datacommons #catalog
 #from owsq.data.download import filezip
@@ -22,7 +22,7 @@ def save(path,source,data_items=[]):#name,path,query):
     collection=config.owrb_welllog_collection 
     url= "http://test.oklahomawatersurvey.org/mongo/db_find/" + database + "/" + collection + "/{'spec':{'COUNTY':{'$in':" + str(counties) +  "}}}/?outtype=csv"   
     print url
-    res=urllib2.urlopen(url)
+    res=urllib2.urlopen(urllib.quote(url))
     filename='OWRB_WellLogs.csv'
     f1=open(os.path.join(sourcepath,filename),'w')
     f1.write(res.read())
