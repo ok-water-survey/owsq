@@ -28,7 +28,7 @@ def save(path,source,data_items=[]):#name,path,query):
     db=Connection(config.mongo_host)
 
     for key,value in consol_data.items():
-        if value['query']['webservice_type']==mesonet:
+        if value['query']['webservice_type']=='mesonet':
             filename='OWRB_MonitoringWell_mesonet%s.csv' % (value['query']['sites'])
             sitedata=db[database]['owrb_monitor_sites'].find_one({'WELL_ID':value['query']['sites']})
             mesosite=sitedata['mesonetID']
