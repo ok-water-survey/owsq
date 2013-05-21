@@ -6,6 +6,7 @@ from subprocess import call
 from celery.task import task
 from owsq import config
 import dateutil.parser
+from pymongo import Connection
 #set catalog user and passwd
 username = config.catalog_username #s.get('user','username')
 password = config.catalog_password #s.get('user','password')
