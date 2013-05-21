@@ -1,4 +1,4 @@
-import os,urllib2,urllib
+import os,urllib2#,urllib
 #import ConfigParser
 from cybercom.data.catalog import datacommons #catalog
 #from owsq.data.download import filezip
@@ -23,7 +23,7 @@ def save(path,source,data_items=[]):#name,path,query):
     collection=config.owrb_MonitorWells_collection
     host = get_host(dcommons)
     urlbase= host['base_directory']
-    owrb_url="http://test.oklahomawatersurvey.org/mongo/db_find/ows/owrb_monitoring_wells/{'spec':{'site':'%s'},'field':['']}/?outtype=csv" 
+#    owrb_url="http://test.oklahomawatersurvey.org/mongo/db_find/ows/owrb_monitoring_wells/{'spec':{'site':'%s'},'field':['']}/?outtype=csv" 
     meso_url="http://www.mesonet.org/index.php/meteogram/data/owrb_text//stid/%s/year/%s/month/%s/day/%s/timelen/%sd/product/GH20/type/csv"
     db=Connection(config.mongo_host)
 
