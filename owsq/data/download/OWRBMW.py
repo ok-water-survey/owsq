@@ -50,6 +50,7 @@ def save(path,source,data_items=[]):#name,path,query):
             f1=open(os.path.join(sourcepath,filename),'w')
             head="site,date,measurement,unit,status,project\n"
             f1.write(head)
+            print head
             temp_tmpl="%s,%s,%s,%s,%s,%s\n"
             for row in db[database][collection].find({'site':value['query']['sites']}).sort([('sort_date',-1),]):
                 temp = temp_tmpl % (row['site'],row['observed_date'],row['value'],row['unit'],row['status'],row['project'])
