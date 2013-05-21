@@ -29,4 +29,4 @@ mesonet_collection="mesonet_site"
 owrb_database="ows"
 owrb_welllog_collection="owrb_well_logs"
 well_logs_url="http://static.cybercommons.org/OklahomaWaterSurvey/OWRB/geojson/Reported_Well_Logs.json"
-
+owrb_MonitorWells_collection="owrb_monitoring_wells"
