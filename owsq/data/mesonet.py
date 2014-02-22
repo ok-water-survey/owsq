@@ -20,7 +20,7 @@ def update_mesonet_sites(url=config.mesonet_site_url,database=config.mesonet_dat
     reader = csv.reader(urllib2.urlopen(url))
     data=[]
     now = datetime.now()
-    collection_backup = "%s_%s" % (collection, now.strftime("%Y-%m-%d-%H%M%S") )
+    collection_backup = "%s_%s" % (collection, now.strftime("%Y_%m_%d_%H%M%S") )
     db[database][collection].rename(collection_backup)
     polydata=[]
     for itm in db.ows.watersheds.find():
