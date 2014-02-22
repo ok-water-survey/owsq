@@ -71,7 +71,7 @@ def mesonet_sites_cleanup(database=config.mesonet_database,collection=config.mes
     db=Connection(config.mesonet_mongo_host)
     r_list =[]
     for col in db[database].collection_names():
-        if col.split("_")[0] == collection:
+        if col.split(colletion)[0] == '':
             if col != collection:
                 r_list.append(col)
     r_list.sort()
