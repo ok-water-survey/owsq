@@ -15,6 +15,7 @@ password = uconfig.get('user','password')
 
 @task()
 def update_mesonet_sites(url=config.mesonet_site_url,database=config.mesonet_database,collection=config.mesonet_collection):
+    """ Update mesonet sites """
     db=Connection(config.mesonet_mongo_host)
     reader = csv.reader(urllib2.urlopen(url))
     data=[]
