@@ -18,8 +18,9 @@ def update_mesonet_sites(url=config.mesonet_site_url,database=config.mesonet_dat
     db=Connection(config.mesonet_mongo_host)
     reader = csv.reader(urllib2.urlopen(url))
     data=[]
-    db[database][collection].remove()
     now = datetime.now()
+    collection_backup = "%s_%s" % (collection, now.strftime("%Y-%m-%d-%H%M%S") )
+    db[database][collection].rename(collection_backup)
     polydata=[]
     for itm in db.ows.watersheds.find():
         polydata.append(itm)
@@ -58,4 +59,24 @@ def update_mesonet_sites(url=config.mesonet_site_url,database=config.mesonet_dat
                 #save data to database
                 data.append(row_data)
                 db[database][collection].save(row_data)
-    return True 
+    return True
+
+@task()
+def mesonet_sites_cleanup(database=config.mesonet_database,collection=config.mesonet_collection): 
+    """
+    Clean up backup site collections. Update renames site collection plus date updated.
+    Finds site collection and keeps the last two backups.
+    """
+    db=Connection(config.mesonet_mongo_host)
+    r_list =[]
+    for col in db[database].collection_names():
+        if col.split("_")[0] == collection:
+            if col != collection:
+                r_list.append(col)
+    r_list.sort()
+    while len(r_list)>2:
+        rm_coll = r_list.pop(0)
+        db[database][rm_coll].remove()
+        
+    
+            
