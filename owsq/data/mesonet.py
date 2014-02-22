@@ -77,7 +77,8 @@ def mesonet_sites_cleanup(database=config.mesonet_database,collection=config.mes
     r_list.sort()
     while len(r_list)>2:
         rm_coll = r_list.pop(0)
-        db[database][rm_coll].remove()
+        db[database][rm_coll].drop()
+    return True
         
     
             
