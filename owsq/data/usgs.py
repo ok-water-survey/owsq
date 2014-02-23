@@ -108,7 +108,10 @@ def sites_usgs(database=site_database,collection=config.usgs_site_collection,ws_
     #backup collection
     now = datetime.now()
     collection_backup = "%s_%s" % (collection, now.strftime("%Y_%m_%d_%H%M%S") )
-    db[database][collection].rename(collection_backup)
+    try:
+        db[database][collection].rename(collection_backup)
+    except:
+        pass
     url=ws_url 
     f1_i =urllib2.urlopen(url+'inactive') 
     f2_a=urllib2.urlopen(url+'active')
