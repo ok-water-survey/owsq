@@ -30,3 +30,10 @@ owrb_database="ows"
 owrb_welllog_collection="owrb_well_logs"
 well_logs_url="http://static.cybercommons.org/OklahomaWaterSurvey/OWRB/geojson/Reported_Well_Logs.json"
 owrb_MonitorWells_collection="owrb_monitoring_wells"
+
+
+#USGS Constants
+usgs_parameter_url="http://nwis.waterdata.usgs.gov/usa/nwis/pmcodes?radio_pm_search=param_group&pm_group=All+--+include+all+parameter+groups&pm_search=&casrn_search=&srsname_search=&format=rdb&show=parameter_group_nm&show=parameter_nm&show=casrn&show=srsname&show=parameter_units"
+usgs_database="ows"
+usgs_parameter_collection="parameters"
+

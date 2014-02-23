@@ -1,19 +1,22 @@
-import json,urllib2,StringIO,csv,ConfigParser,os,commands
+import json,urllib2,StringIO,csv,commands #ConfigParser,os,commands
 from celery.task import task
 from celery.task.sets import subtask
 #from celery import chord
 from pymongo import Connection
 from datetime import datetime,timedelta
 from cybercom.data.catalog import datacommons #catalog
-#set catalog user and passwd
-cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
-config= ConfigParser.RawConfigParser()
-config.read(cfgfile)
-username = config.get('user','username')
-password = config.get('user','password')
+from owsq import config
 
-mongoHost = 'localhost'
-site_database='ows'
+
+#set catalog user and passwd
+#cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
+#config= ConfigParser.RawConfigParser()
+#config.read(cfgfile)
+username = config.catalog_username #get('user','username')
+password = config.catalog_password #get('user','password')
+
+mongoHost = config.mongo_host #'localhost'
+site_database = config.usgs_database #'ows'
 
 @task()
 def load_site_metadata(site=None,site_collection='usgs_site',database=site_database,collection='usgs_site_metadata',delete=True):
@@ -167,12 +170,13 @@ def usgs_iv(database=site_database,collection='usgs_iv_site',delete=True):
             db[database][collection].insert(temp)
     return json.dumps({'source':'usgs_iv','url':url,'database':database,'collection':collection}, indent=2)
 @task()
-def usgs_parameters(database=site_database,collection='parameters',delete=True):
+def usgs_parameters(database=site_database,collection=config.usgs_parameter_collection,ws_url=config.usgs_parameter_url):
     ''' Task to update USGS Parameters '''
     db=Connection(mongoHost)
-    if delete:
-        db[database][collection].remove()
-    url='http://nwis.waterdata.usgs.gov/usa/nwis/pmcodes?radio_pm_search=param_group&pm_group=All+--+include+all+parameter+groups&pm_search=&casrn_search=&srsname_search=&format=rdb&show=parameter_group_nm&show=parameter_nm&show=casrn&show=srsname&show=parameter_units'
+    now = datetime.now()
+    collection_backup = "%s_%s" % (collection, now.strftime("%Y_%m_%d_%H%M%S") )
+    db[database][collection].rename(collection_backup)
+    url= ws_url 
     param=urllib2.urlopen(url)
     output= StringIO.StringIO(param.read())
     temp='#'
@@ -186,6 +190,7 @@ def usgs_parameters(database=site_database,collection='parameters',delete=True):
         temp=row.strip('\r\n').split('\t')
         db[database][collection].insert(dict(zip(head,temp)))
     return json.dumps({'source':'params','url':url,'database':database,'collection':collection}, indent=2)
+
 @task()
 def usgs_get_sitedata(sites,type='instantaneous',params="{'format':'json'}",data_provider='USGS'):
     dcommons = datacommons.toolkit(username,password)
