@@ -33,7 +33,12 @@ owrb_MonitorWells_collection="owrb_monitoring_wells"
 
 
 #USGS Constants
-usgs_parameter_url="http://nwis.waterdata.usgs.gov/usa/nwis/pmcodes?radio_pm_search=param_group&pm_group=All+--+include+all+parameter+groups&pm_search=&casrn_search=&srsname_search=&format=rdb&show=parameter_group_nm&show=parameter_nm&show=casrn&show=srsname&show=parameter_units"
 usgs_database="ows"
+
+# parameter
+usgs_parameter_url="http://nwis.waterdata.usgs.gov/usa/nwis/pmcodes?radio_pm_search=param_group&pm_group=All+--+include+all+parameter+groups&pm_search=&casrn_search=&srsname_search=&format=rdb&show=parameter_group_nm&show=parameter_nm&show=casrn&show=srsname&show=parameter_units"
 usgs_parameter_collection="parameters"
 
+# site
+usgs_site_url="http://waterservices.usgs.gov/nwis/site/?format=rdb&stateCd=ok&siteStatus="
+usgs_site_collection="usgs_site"

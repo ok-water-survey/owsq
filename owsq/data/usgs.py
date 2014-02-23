@@ -99,15 +99,17 @@ def usgs_sync(source,database=site_database):
         return json.dumps({'error': "Unknown source", 'available_sources': ['usgs','usgs-wq','usgs-iv','usgs-params']}, indent=2)
 
 @task()
-def sites_usgs(database=site_database,collection='usgs_site',delete=True):
+def sites_usgs(database=site_database,collection=config.usgs_site_collection,ws_url=config.usgs_site_url):#,delete=True):
     '''
         Task to update USGS 
         Sites
     '''
     db=Connection(mongoHost)
-    if delete:
-        db[database][collection].remove()
-    url='http://waterservices.usgs.gov/nwis/site/?format=rdb&stateCd=ok&siteStatus=' 
+    #backup collection
+    now = datetime.now()
+    collection_backup = "%s_%s" % (collection, now.strftime("%Y_%m_%d_%H%M%S") )
+    db[database][collection].rename(collection_backup)
+    url=ws_url 
     f1_i =urllib2.urlopen(url+'inactive') 
     f2_a=urllib2.urlopen(url+'active')
     f1_in=StringIO.StringIO(f1_i.read())
