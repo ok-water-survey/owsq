@@ -154,6 +154,7 @@ def set_geo(row_data,polydata,aquifer_poly,lat_name,lon_name):
         if gis_tools.intersect_point(s,row_data[lat_name],row_data[lon_name]):
             row_data["aquifer"]=poly['properties']['NAME']
             break
+    return row_data
 def get_geometry(items='aquifer'):
     polydata=[]
     db=Connection(mongoHost)
