@@ -133,8 +133,13 @@ def sites_usgs(database=site_database,collection=config.usgs_site_collection,ws_
         temp = row.strip('\r\n').split('\t')
         temp.append('Active')
         rec =dict(zip(head,temp))
-        row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
-        db[database][collection].insert(row_data)
+        oldrec = db[database][collection_backup].find_one({'site_no':rec['site_no']})
+        if oldrec:
+            oldrec.update(rec)
+            db[database][collection].save(oldrec)
+        else:
+            row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
+            db[database][collection].insert(row_data)
     for row in f1_in:
         temp = row.strip('\r\n').split('\t')
         temp.append('Inactive')
