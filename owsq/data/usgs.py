@@ -132,15 +132,15 @@ def sites_usgs(database=site_database,collection=config.usgs_site_collection,ws_
     for row in f2_act:
         temp = row.strip('\r\n').split('\t')
         temp.append('Active')
-        rec =dict(zip(head,temp))
-        row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
-        db[database][collection].insert(row_data)
+        #rec =dict(zip(head,temp))
+        #row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
+        db[database][collection].insert(rec) #ow_data)
     for row in f1_in:
         temp = row.strip('\r\n').split('\t')
         temp.append('Inactive')
-        rec =dict(zip(head,temp))
-        row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
-        db[database][collection].insert(row_data)
+        #rec =dict(zip(head,temp))
+        #row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
+        db[database][collection].insert(rec) #ow_data)
     return {'source':'usgs','url':[url+'inactive',url+'active'],'database':database,'collection':collection,'record_count':db[database][collection].count()}
 #@task()
 #def sites_usgs_geo(
