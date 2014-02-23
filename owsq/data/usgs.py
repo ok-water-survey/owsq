@@ -6,7 +6,7 @@ from pymongo import Connection
 from datetime import datetime,timedelta
 from cybercom.data.catalog import datacommons #catalog
 from owsq import config
-
+from owsq.util import gis_tools
 
 #set catalog user and passwd
 #cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
@@ -124,16 +124,47 @@ def sites_usgs(database=site_database,collection=config.usgs_site_collection,ws_
     head.append('status')
     f2_act.readline()
     f1_in.readline()
+    watershed = get_geometry('watershed')
+    aquifer = get_geometry('aquifer')
     for row in f2_act:
         temp = row.strip('\r\n').split('\t')
         temp.append('Active')
-        db[database][collection].insert(dict(zip(head,temp)))
+        rec =dict(zip(head,temp))
+        row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
+        db[database][collection].insert(row_data)
     for row in f1_in:
         temp = row.strip('\r\n').split('\t')
         temp.append('Inactive')
-        db[database][collection].insert(dict(zip(head,temp)))
-    return json.dumps({'source':'usgs','url':[url+'inactive',url+'active'],'database':database,'collection':collection,'record_count':db[database][collection].count()}, indent=2)
-@task()
+        rec =dict(zip(head,temp))
+        row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
+        db[database][collection].insert(row_data)
+    return {'source':'usgs','url':[url+'inactive',url+'active'],'database':database,'collection':collection,'record_count':db[database][collection].count()}
+#@task()
+#def sites_usgs_geo(
+def set_geo(row_data,polydata,aquifer_poly,lat_name,lon_name):
+    for poly in polydata:
+        s= poly['geometry']
+        if gis_tools.intersect_point(s,row_data[lat_name],row_data[lon_name]):
+            if 'HUC_4' in poly['properties']:
+                row_data["huc_4"]=poly['properties']['HUC_4']
+            if 'HUC_8' in poly['properties']:
+                row_data["huc_8"]=poly['properties']['HUC_8']
+    for poly in aquifer_poly:
+        s= poly['geometry']
+        if gis_tools.intersect_point(s,row_data[lat_name],row_data[lon_name]):
+            row_data["aquifer"]=poly['properties']['NAME']
+            break
+def get_geometry(items='aquifer'):
+    polydata=[]
+    db=Connection(mongoHost)
+    if items == 'watershed':
+        for itm in db.ows.watersheds.find():
+            polydata.append(itm)
+    else:
+        for itm in db.ows.aquifers.find():
+            polydata.append(itm)
+    return polydata
+task()
 def sites_usgs_wq(database=site_database,collection='usgs_wq_site',delete=True):
     '''
         Task to update USEPA and USGS 
