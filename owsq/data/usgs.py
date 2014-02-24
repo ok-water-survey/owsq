@@ -7,7 +7,7 @@ from datetime import datetime,timedelta
 from cybercom.data.catalog import datacommons #catalog
 from owsq import config
 from owsq.util import gis_tools
-
+from sets import Set
 #set catalog user and passwd
 #cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
 #config= ConfigParser.RawConfigParser()
@@ -58,6 +58,7 @@ def get_site_metadata(site,db,database,collection):#,database=site_database,coll
             data['_id']=exist['_id']
         db[database][collection].save(data)
     #print head
+
 @task()
 def get_metadata_site(site,ws_url='http://waterservices.usgs.gov/nwis/site/?format=rdb&sites=%s&seriesCatalogOutput=true',database=site_database):
     db=Connection(mongoHost)
@@ -81,6 +82,7 @@ def get_metadata_site(site,ws_url='http://waterservices.usgs.gov/nwis/site/?form
             pass
         output.append(data)
     return json.dumps(output)#, indent=2)
+
 @task()
 def usgs_sync(source,database=site_database):
     ''' 
@@ -100,7 +102,7 @@ def usgs_sync(source,database=site_database):
 
 @task()
 def sites_usgs(database=site_database,collection=config.usgs_site_collection,ws_url=config.usgs_site_url):#,delete=True):
-    '''
+    '''**************************
         Task to update USGS 
         Sites
     '''
@@ -144,8 +146,15 @@ def sites_usgs(database=site_database,collection=config.usgs_site_collection,ws_
         temp = row.strip('\r\n').split('\t')
         temp.append('Inactive')
         rec =dict(zip(head,temp))
+        oldrec = db[database][collection_backup].find_one({'site_no':rec['site_no']})
+        if oldrec:
+            oldrec.update(rec)
+            db[database][collection].save(oldrec)
+        else:
+            row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
+            db[database][collection].insert(row_data)
         #row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
-        db[database][collection].insert(rec) #ow_data)
+        #db[database][collection].insert(rec) #ow_data)
     return {'source':'usgs','url':[url+'inactive',url+'active'],'database':database,'collection':collection,'record_count':db[database][collection].count()}
 #@task()
 #def sites_usgs_geo(
@@ -173,7 +182,35 @@ def get_geometry(items='aquifer'):
         for itm in db.ows.aquifers.find():
             polydata.append(itm)
     return polydata
-task()
+
+@task()
+def update_webservie_types(database='ows',collection='usgs_site',delete=True):
+    """*******************************"""
+    db=Connection(mongoHost)
+    url = 'http://waterservices.usgs.gov/nwis/site/?format=rdb&sites=%s&seriesCatalogOutput=true'
+    for row in db[database][collection].find({'status':'Active'}):
+        ws_set=Set([])
+        try:
+            f = urllib2.urlopen(url % (row['site_no']))
+            f1 = StringIO.StringIO(f.read())
+            temp='#'
+            head=''
+            while (temp[0]=="#"):
+                temp=f1.readline()
+                if temp[0]!='#':
+                    head = temp.strip('\r\n').split('\t')
+            f1.readline()
+            for r in f1:
+                temp = r.strip('\r\n').split('\t')
+                rec =dict(zip(head,temp))
+                ws_set.add(rec['data_type_cd'])
+            row['webservice']=list(ws_set)
+            db[database][collection].save(row)
+        except:
+            row['webservice']=list(ws_set)
+            db[database][collection].save(row)
+
+@task()
 def sites_usgs_wq(database=site_database,collection='usgs_wq_site',delete=True):
     '''
         Task to update USEPA and USGS 
