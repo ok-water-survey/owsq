@@ -2,6 +2,9 @@ from owsq import config
 import geojson,pyproj
 from shapely.geometry import Point
 from shapely.geometry import shape
+from pymongo import Connection
+#from shapely.geometry import shape
+from rtree import index
 
 def mkGeoJSONPoint(obj,latkey,lonkey,attributes=False, transform=False, t_srs=config.TARGET_PROJECTION, s_srs=config.SOURCE_PROJECTION):
     ''' Return geojson feature collection ''' 
@@ -35,3 +38,26 @@ def intersect_point(objshape,lat,lon, t_srs=config.TARGET_PROJECTION, s_srs=conf
     if point.intersects(shape(objshape)):
         return True
     return False
+
+def ok_watershed_aquifer_rtree(database='ows',watershed_collection=config.watershed_collection,aquifer_collection=config.aquifer_collection):
+    """ 
+        Returns rtree spatial index of bounds of Oklahoma watersheds and aquifers.
+        returns rtree index and dictionary corresponding to rtree index as the key with type and properties
+    """
+    db = Connection(config.mongo_host)
+    data={}
+    indx=1
+    idx = index.Index()
+    for geo in db[database][watershed_collection].find():
+        obj = shape(geo['geometry'])
+        idx.insert(indx, obj.bounds, obj=obj)
+        data[indx] = {'shape':obj,'properties': geo['properties'],'type':'watershed'}
+        indx +=1
+    for geo in db[database][aquifer_collection].find():
+        obj = shape(geo['geometry'])
+        idx.insert(indx, obj.bounds, obj=obj)
+        data[indx] = {'shape':obj,'properties': geo['properties'],'type':'aquifer'}
+        indx +=1
+    return idx,data
+    
+    
