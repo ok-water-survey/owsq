@@ -1,12 +1,13 @@
 import json,urllib2,StringIO,csv,commands #ConfigParser,os,commands
 from celery.task import task
-from celery.task.sets import subtask
+#from celery.task.sets import subtask
 #from celery import chord
 from pymongo import Connection
-from datetime import datetime,timedelta
+from datetime import datetime # ,timedelta
 from cybercom.data.catalog import datacommons #catalog
 from owsq import config
 from owsq.util import gis_tools
+from shapely.geometry import Point
 from sets import Set
 #set catalog user and passwd
 #cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
@@ -83,22 +84,22 @@ def get_metadata_site(site,ws_url='http://waterservices.usgs.gov/nwis/site/?form
         output.append(data)
     return json.dumps(output)#, indent=2)
 
-@task()
-def usgs_sync(source,database=site_database):
-    ''' 
-        source - [usgs-wq,usgs,params,usgs-iv]
-
-    '''
-    if source == 'usgs-wq':
-        return sites_usgs_wq(database,'usgs_wq_site')
-    elif source == 'usgs':
-        return sites_usgs(database,'usgs_site')
-    elif source == 'params':
-        return usgs_parameters(database,'parameters')
-    elif source == 'usgs-iv':
-        return usgs_iv(database,'usgs_iv_site')
-    else:
-        return json.dumps({'error': "Unknown source", 'available_sources': ['usgs','usgs-wq','usgs-iv','usgs-params']}, indent=2)
+#@task()
+#def usgs_sync(source,database=site_database):
+#    ''' 
+#        source - [usgs-wq,usgs,params,usgs-iv]
+#
+#    '''
+    #if source == 'usgs-wq':
+    #    return sites_usgs_wq(database,'usgs_wq_site')
+    #elif source == 'usgs':
+    #    return sites_usgs(database,'usgs_site')
+    #elif source == 'params':
+    #    return usgs_parameters(database,'parameters')
+    #elif source == 'usgs-iv':
+    #    return usgs_iv(database,'usgs_iv_site')
+    #else:
+#    return json.dumps({'error': "Unknown source", 'available_sources': ['usgs','usgs-wq','usgs-iv','usgs-params']}, indent=2)
 
 @task()
 def sites_usgs_update(database=site_database,collection=config.usgs_site_collection,ws_url=config.usgs_site_url):#,delete=True):
@@ -130,7 +131,7 @@ def sites_usgs_update(database=site_database,collection=config.usgs_site_collect
     f2_act.readline()
     f1_in.readline()
     #get rtree spatial index and data object
-    idx,data = gis_tools.ok_watershed_aquifer_rtree():
+    idx,data = gis_tools.ok_watershed_aquifer_rtree()
     for row in f2_act:
         temp = row.strip('\r\n').split('\t')
         temp.append('Active')
@@ -143,10 +144,10 @@ def sites_usgs_update(database=site_database,collection=config.usgs_site_collect
             aPoint = Point(x,y)
             row_data = set_geo(rec,aPoint,hits,data)
             #set webservices
-              try:
-                  row_data['webservice']=get_webservice(row_data['site_no'])
-              except:
-                  row_data['webservice']=[]
+            try:
+                row_data['webservice']=get_webservice(row_data['site_no'])
+            except:
+                row_data['webservice']=[]
             #row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
             db[database][collection_backup].insert(row_data)
         except:
@@ -200,7 +201,7 @@ def set_geo(row_data,aPoint,hits,data):
                 row_data['aquifers'].append({'name':prop['NAME'],'type':prop['TYPE']})
     return row_data
 
-def get_webservice(site,url=config.usgs_site_metadata_url)
+def get_webservice(site,url=config.usgs_site_metadata_url):
     ws_set=Set([])
     try:
         f = urllib2.urlopen(url % (site))
@@ -217,7 +218,7 @@ def get_webservice(site,url=config.usgs_site_metadata_url)
             rec =dict(zip(head,temp))
             ws_set.add(rec['data_type_cd'])
         return list(ws_set)
-      except:
+    except:
         return list(ws_set)
 
 @task()
