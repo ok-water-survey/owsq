@@ -20,12 +20,12 @@ site_database = config.usgs_database #'ows'
 
 @task()
 def load_site_metadata(site=None,site_collection='usgs_site',database=site_database,collection='usgs_site_metadata',delete=True):
+    db=Connection(mongoHost)
     if site:
         sites= site.split(',')
         for s in sites:
             get_site_metadata(s,db,database,collection)
     else:
-        db=Connection(mongoHost)
         if delete:
             db[database][collection].remove()
         sites= db[database][site_collection].find(timeout=False)#.limit(10)
@@ -101,7 +101,7 @@ def usgs_sync(source,database=site_database):
         return json.dumps({'error': "Unknown source", 'available_sources': ['usgs','usgs-wq','usgs-iv','usgs-params']}, indent=2)
 
 @task()
-def sites_usgs(database=site_database,collection=config.usgs_site_collection,ws_url=config.usgs_site_url):#,delete=True):
+def sites_usgs_update(database=site_database,collection=config.usgs_site_collection,ws_url=config.usgs_site_url):#,delete=True):
     '''**************************
         Task to update USGS 
         Sites
@@ -110,10 +110,10 @@ def sites_usgs(database=site_database,collection=config.usgs_site_collection,ws_
     #backup collection
     now = datetime.now()
     collection_backup = "%s_%s" % (collection, now.strftime("%Y_%m_%d_%H%M%S") )
-    try:
-        db[database][collection].rename(collection_backup)
-    except:
-        pass
+    #try:
+    #    db[database][collection].rename(collection_backup)
+    #except:
+    #    raise #pass
     url=ws_url 
     f1_i =urllib2.urlopen(url+'inactive') 
     f2_a=urllib2.urlopen(url+'active')
@@ -129,59 +129,96 @@ def sites_usgs(database=site_database,collection=config.usgs_site_collection,ws_
     head.append('status')
     f2_act.readline()
     f1_in.readline()
-    watershed = get_geometry('watershed')
-    aquifer = get_geometry('aquifer')
+    #get rtree spatial index and data object
+    idx,data = gis_tools.ok_watershed_aquifer_rtree():
     for row in f2_act:
         temp = row.strip('\r\n').split('\t')
         temp.append('Active')
         rec =dict(zip(head,temp))
-        oldrec = db[database][collection_backup].find_one({'site_no':rec['site_no']})
-        if oldrec:
-            oldrec.update(rec)
-            db[database][collection].save(oldrec)
-        else:
-            row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
-            db[database][collection].insert(row_data)
+        rec['watersheds']=[]
+        rec['aquifers']=[]
+        try:
+            x, y = gis_tools.transform_point(rec['dec_lat_va'], rec['dec_long_va'])
+            hits = list(idx.intersection((x, y, x, y)))#, objects=True)) #[0]  #[0].object
+            aPoint = Point(x,y)
+            row_data = set_geo(rec,aPoint,hits,data)
+            #set webservices
+              try:
+                  row_data['webservice']=get_webservice(row_data['site_no'])
+              except:
+                  row_data['webservice']=[]
+            #row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
+            db[database][collection_backup].insert(row_data)
+        except:
+            #Legacy code inserted without lat lon and covered errors in code
+            #decided to just pass and eliminate error catching. May change back in the future
+            pass
+            #db[database][collection_backup].insert(rec)
     for row in f1_in:
         temp = row.strip('\r\n').split('\t')
         temp.append('Inactive')
         rec =dict(zip(head,temp))
-        oldrec = db[database][collection_backup].find_one({'site_no':rec['site_no']})
-        if oldrec:
-            oldrec.update(rec)
-            db[database][collection].save(oldrec)
-        else:
-            row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
-            db[database][collection].insert(row_data)
-        #row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
-        #db[database][collection].insert(rec) #ow_data)
-    return {'source':'usgs','url':[url+'inactive',url+'active'],'database':database,'collection':collection,'record_count':db[database][collection].count()}
-#@task()
-#def sites_usgs_geo(
-def set_geo(row_data,polydata,aquifer_poly,lat_name,lon_name):
-    for poly in polydata:
-        s= poly['geometry']
-        if gis_tools.intersect_point(s,row_data[lat_name],row_data[lon_name]):
-            if 'HUC_4' in poly['properties']:
-                row_data["huc_4"]=poly['properties']['HUC_4']
-            if 'HUC_8' in poly['properties']:
-                row_data["huc_8"]=poly['properties']['HUC_8']
-    for poly in aquifer_poly:
-        s= poly['geometry']
-        if gis_tools.intersect_point(s,row_data[lat_name],row_data[lon_name]):
-            row_data["aquifer"]=poly['properties']['NAME']
-            break
+        rec['watersheds']=[]
+        rec['aquifers']=[]
+        try:
+            x, y = gis_tools.transform_point(rec['dec_lat_va'], rec['dec_long_va'])
+            hits = list(idx.intersection((x, y, x, y)))#, objects=True)) #[0]  #[0].object
+            aPoint = Point(x,y)
+            row_data = set_geo(rec,aPoint,hits,data)
+            #set webservices
+            try:
+                row_data['webservice']=get_webservice(row_data['site_no'])
+            except:
+                row_data['webservice']=[]
+            #row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
+            db[database][collection_backup].insert(row_data)
+        except:
+            #Legacy code inserted without lat lon and covered errors in code
+            #decided to just pass and eliminate error catching. May change back in the future
+            pass
+            #db[database][collection_backup].insert(rec)
+    return {'source':'usgs','url':[url+'inactive',url+'active'],'database':database,'collection':collection_backup,'record_count':db[database][collection_backup].count()}
+
+def set_geo(row_data,aPoint,hits,data):
+    for hitIdx in hits:
+        if data[hitIdx]['shape'].intersects(aPoint):
+            if data[hitIdx]['type'] == 'watershed':
+                #print "****** Watershed  **********"
+                prop = data[hitIdx]['properties']
+                #Legacy code - This make sense will test with list of watersheds
+                if 'HUC_4' in prop:
+                    row_data["huc_4"]=prop['HUC_4']
+                if 'HUC_8' in prop:
+                    row_data["huc_8"]=prop['HUC_8']
+                #new format
+                row_data['watersheds'].append({'name':prop['NAME'],'HUC':prop['HUC']})
+            else: # Aquifers 
+                prop = data[hitIdx]['properties']
+                #Legacy code - Errors replaced multiple aquifers with just one
+                row_data["aquifer"]=prop['NAME']
+                #new format
+                row_data['aquifers'].append({'name':prop['NAME'],'type':prop['TYPE']})
     return row_data
-def get_geometry(items='aquifer'):
-    polydata=[]
-    db=Connection(mongoHost)
-    if items == 'watershed':
-        for itm in db.ows.watersheds.find():
-            polydata.append(itm)
-    else:
-        for itm in db.ows.aquifers.find():
-            polydata.append(itm)
-    return polydata
+
+def get_webservice(site,url=config.usgs_site_metadata_url)
+    ws_set=Set([])
+    try:
+        f = urllib2.urlopen(url % (site))
+        f1 = StringIO.StringIO(f.read())
+        temp='#'
+        head=''
+        while (temp[0]=="#"):
+            temp=f1.readline()
+            if temp[0]!='#':
+                head = temp.strip('\r\n').split('\t')
+        f1.readline()
+        for r in f1:
+            temp = r.strip('\r\n').split('\t')
+            rec =dict(zip(head,temp))
+            ws_set.add(rec['data_type_cd'])
+        return list(ws_set)
+      except:
+        return list(ws_set)
 
 @task()
 def update_webservie_types(database='ows',collection='usgs_site',delete=True):
