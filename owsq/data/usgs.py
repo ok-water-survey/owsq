@@ -85,6 +85,7 @@ def get_metadata_site(site,ws_url='http://waterservices.usgs.gov/nwis/site/?form
     return json.dumps(output)#, indent=2)
 @task()
 def usgs_set_dbc(a,b,database='ows'):
+    db=Connection(mongoHost)
     now = datetime.now()
     collection = "%s_%s" % (a, now.strftime("%Y_%m_%d_%H%M%S") )
     if a not in db[database].collection_names():
