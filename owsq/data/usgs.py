@@ -19,7 +19,7 @@ password = config.catalog_password #get('user','password')
 mongoHost = config.mongo_host #'localhost'
 site_database = config.usgs_database #'ows'
 
-@task()
+#@task()
 def load_site_metadata(site=None,site_collection='usgs_site',database=site_database,collection='usgs_site_metadata',delete=True):
     db=Connection(mongoHost)
     if site:
@@ -83,7 +83,20 @@ def get_metadata_site(site,ws_url='http://waterservices.usgs.gov/nwis/site/?form
             pass
         output.append(data)
     return json.dumps(output)#, indent=2)
-
+@task()
+def usgs_set_dbc(a,b,database='ows'):
+    now = datetime.now()
+    collection = "%s_%s" % (a, now.strftime("%Y_%m_%d_%H%M%S") )
+    if a not in db[database].collection_names():
+        return json.dumps({'error':'parameter error'})
+    if b not in db[database].collection_names():
+        return json.dumps({'error':'parameter error'})
+    try:
+        db[database][a].rename(collection)
+        db[database][b].rename(a)
+    except:
+        raise #pass
+    return json.dumps({'Success':'%s switched with %s' % (a,b)})
 #@task()
 #def usgs_sync(source,database=site_database):
 #    ''' 
