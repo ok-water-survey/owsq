@@ -130,6 +130,7 @@ def sites_usgs_update(database=site_database,collection=config.usgs_site_collect
     head.append('status')
     f2_act.readline()
     f1_in.readline()
+
     #get rtree spatial index and data object
     idx,data = gis_tools.ok_watershed_aquifer_rtree()
     for row in f2_act:
@@ -155,6 +156,7 @@ def sites_usgs_update(database=site_database,collection=config.usgs_site_collect
             #decided to just pass and eliminate error catching. May change back in the future
             pass
             #db[database][collection_backup].insert(rec)
+
     for row in f1_in:
         temp = row.strip('\r\n').split('\t')
         temp.append('Inactive')
@@ -178,7 +180,8 @@ def sites_usgs_update(database=site_database,collection=config.usgs_site_collect
             #decided to just pass and eliminate error catching. May change back in the future
             pass
             #db[database][collection_backup].insert(rec)
-    return {'source':'usgs','url':[url+'inactive',url+'active'],'database':database,'collection':collection_backup,'record_count':db[database][collection_backup].count()}
+
+    return {'source':'usgs','url':[ url+'inactive', url+'active'],'database':database,'collection':collection_backup,'record_count':db[database][collection_backup].count()}
 
 def set_geo(row_data,aPoint,hits,data):
     for hitIdx in hits:
@@ -215,7 +218,7 @@ def get_webservice(site,url=config.usgs_site_metadata_url):
         f1.readline()
         for r in f1:
             temp = r.strip('\r\n').split('\t')
-            rec =dict(zip(head,temp))
+            rec = dict(zip(head,temp))
             ws_set.add(rec['data_type_cd'])
         return list(ws_set)
     except:
@@ -251,22 +254,43 @@ def update_webservie_types(database='ows',collection='usgs_site',delete=True):
 @task()
 def sites_usgs_wq(database=site_database,collection='usgs_wq_site',delete=True):
     '''
+
         Task to update USEPA and USGS 
         Water Quality sites
+
     '''
-    db=Connection(mongoHost)
-    if delete:
-        db[database][collection].remove()
+    db = Connection(mongoHost)
+    #backup collection
+    now = datetime.now()
+    collection_backup = "%s_%s" % (collection, now.strftime("%Y_%m_%d_%H%M%S") )
+    
+    #get rtree spatial index and data object
+    idx,data = gis_tools.ok_watershed_aquifer_rtree()
+    #if delete:
+    #    db[database][collection].remove()
     url = 'http://www.waterqualitydata.us/Station/search?statecode=40&mimeType=csv' 
-    sites=urllib2.urlopen(url)
-    output= StringIO.StringIO(sites.read())
-    head=output.readline()
-    head= head.replace('/','-').strip('\r\n').split(',')
+    sites = urllib2.urlopen(url)
+    output = StringIO.StringIO(sites.read())
+    head = output.readline()
+    head = head.replace('/','-').strip('\r\n').split(',')
     #print head
     reader = csv.DictReader(output,head)
-    for row in reader:
-        db[database][collection].insert(row)
-    return json.dumps({'source':'usgs_wq','url':url,'database':database,'collection':collection}, indent=2)
+    for rec in reader:
+        rec['watersheds']=[]
+        rec['aquifers']=[]
+        try:
+            x, y = gis_tools.transform_point(rec['LatitudeMeasure'], rec['LongitudeMeasure'])
+            hits = list(idx.intersection((x, y, x, y)))#, objects=True)) #[0]  #[0].object
+            aPoint = Point(x,y)
+            row_data = set_geo(rec,aPoint,hits,data)
+            db[database][collection_backup].insert(row_data)
+        except:
+            #Legacy code inserted without lat lon and covered errors in code
+            #decided to just pass and eliminate error catching. May change back in the future
+            pass
+            #db[database][collection_backup].insert(rec)
+    return json.dumps({'source':'usgs_wq','url':url,'database':database,'collection':collection_backup}, indent=2)
+
 @task()
 def usgs_iv(database=site_database,collection='usgs_iv_site',delete=True):
     ''' Task to update USGS Sites
