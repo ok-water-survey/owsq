@@ -43,9 +43,14 @@ usgs_parameter_collection = "parameters"
 # site
 usgs_site_url = "http://waterservices.usgs.gov/nwis/site/?format=rdb&stateCd=ok&siteStatus="
 usgs_site_collection = "usgs_site"
+
 #USGS webservice and metadata site template
 usgs_site_metadata_url = "http://waterservices.usgs.gov/nwis/site/?format=rdb&sites=%s&seriesCatalogOutput=true"
-#Oklahoma RTree spatial Database
-watershed_collection = 'watersheds'
-aquifer_collection = 'aquifers'
 
+#Oklahoma RTree spatial Database
+watershed_collection = "watersheds"
+aquifer_collection = "aquifers"
+
+#water quality portal
+wqp_result = "http://www.waterqualitydata.us/Result/search?siteid=%s&mimeType=csv"
+wqp_site = "http://www.waterqualitydata.us/Station/search?statecode=40&mimeType=csv"

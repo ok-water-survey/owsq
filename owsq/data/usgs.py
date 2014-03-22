@@ -3,6 +3,9 @@ import urllib2
 import StringIO
 import csv
 import commands
+import pandas as pd
+import numpu as np
+from urllib2 import urlopen
 from datetime import datetime  # ,timedelta
 
 from celery.task import task
@@ -151,6 +154,8 @@ def sites_usgs_update(database=site_database, collection=config.usgs_site_collec
 
     #get rtree spatial index and data object
     idx, data = gis_tools.ok_watershed_aquifer_rtree()
+
+    #USGS Active sites
     for row in f2_act:
         temp = row.strip('\r\n').split('\t')
         temp.append('Active')
@@ -158,6 +163,18 @@ def sites_usgs_update(database=site_database, collection=config.usgs_site_collec
         rec['watersheds'] = []
         rec['aquifers'] = []
         try:
+            #set webservices
+            try:
+                row_data['webservice'], row_data['parameter'], row_data['last_activity'] = get_webservice(row_data['site_no'], db)
+            except:
+                row_data['webservice'] = []
+                row_data['parameter'] = []
+                row_data['last_date'] = ''
+
+            #Check if data is available
+            if len(row_data['parameter']) == 0:
+                continue
+
             #set watershed and aquifer
             try:
                 x, y = gis_tools.transform_point(rec['dec_lat_va'], rec['dec_long_va'])
@@ -166,12 +183,8 @@ def sites_usgs_update(database=site_database, collection=config.usgs_site_collec
                 row_data = set_geo(rec, aPoint, hits, data)
             except:
                 pass
-            #set webservices
-            try:
-                row_data['webservice'], row_data['parameter'] = get_webservice(row_data['site_no'], db)
-            except:
-                row_data['webservice'] = []
-            #row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
+
+            #Save site data
             db[database][collection_backup].insert(row_data)
         except:
             #Legacy code inserted without lat lon and covered errors in code
@@ -186,16 +199,22 @@ def sites_usgs_update(database=site_database, collection=config.usgs_site_collec
         rec['watersheds'] = []
         rec['aquifers'] = []
         try:
+            #set webservices
+            try:
+                row_data['webservice'], row_data['parameter'], row_data['last_activity'] = get_webservice(row_data['site_no'], db)
+            except:
+                row_data['webservice'] = []
+                row_data['parameter'] = []
+                row_data['last_date'] = ''
+            #Check if data is available
+            if len(row_data['parameter']) == 0:
+                continue
             x, y = gis_tools.transform_point(rec['dec_lat_va'], rec['dec_long_va'])
             hits = list(idx.intersection((x, y, x, y)))  #, objects=True)) #[0]  #[0].object
             aPoint = Point(x, y)
             row_data = set_geo(rec, aPoint, hits, data)
-            #set webservices
-            try:
-                row_data['webservice'], row_data['parameter'] = get_webservice(row_data['site_no'], db)
-            except:
-                row_data['webservice'] = []
-            #row_data= set_geo(rec,watershed,aquifer,'dec_lat_va','dec_long_va')
+
+            #save site data
             db[database][collection_backup].insert(row_data)
         except:
             #Legacy code inserted without lat lon and covered errors in code
@@ -232,6 +251,7 @@ def set_geo(row_data, aPoint, hits, data):
 def get_webservice(site, db, url=config.usgs_site_metadata_url):
     ws_set = set([])
     data = []
+    end_dates = []
     try:
         f = urllib2.urlopen(url % (site))
         f1 = StringIO.StringIO(f.read())
@@ -243,8 +263,10 @@ def get_webservice(site, db, url=config.usgs_site_metadata_url):
                 head = temp.strip('\r\n').split('\t')
         f1.readline()
         for r in f1:
+
             temp = r.strip('\r\n').split('\t')
             rec = dict(zip(head, temp))
+            end_dates.append(rec['end_date'])
             try:
                 param = db[site_database]['parameters'].find_one({'parameter_cd': rec['parm_cd']})
                 data.append({'group_name': param['parameter_group_nm'], 'name': param['parameter_nm'],
@@ -254,9 +276,10 @@ def get_webservice(site, db, url=config.usgs_site_metadata_url):
             except:
                 pass
             ws_set.add(rec['data_type_cd'])
-        return list(ws_set), data
+        end_dates.sort()
+        return list(ws_set), data, end_dates[-1]
     except:
-        return list(ws_set), data
+        return list(ws_set), data, end_dates[-1]
 
 
 #@task()
@@ -296,6 +319,7 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
 
     '''
     db = Connection(mongoHost)
+    url_template =
     #backup collection
     now = datetime.now()
     collection_backup = "%s_%s" % (collection, now.strftime("%Y_%m_%d_%H%M%S") )
@@ -304,8 +328,8 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
     idx, data = gis_tools.ok_watershed_aquifer_rtree()
     #if delete:
     #    db[database][collection].remove()
-    url = 'http://www.waterqualitydata.us/Station/search?statecode=40&mimeType=csv'
-    sites = urllib2.urlopen(url)
+    url_site = 'http://www.waterqualitydata.us/Station/search?statecode=40&mimeType=csv'
+    sites = urllib2.urlopen(url_site)
     output = StringIO.StringIO(sites.read())
     head = output.readline()
     head = head.replace('/', '-').strip('\r\n').split(',')
@@ -315,17 +339,38 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
         rec['watersheds'] = []
         rec['aquifers'] = []
         try:
+            url = config.wqp_result % (rec['MonitoringLocationIdentifier'])
+            page = urlopen(url)
+            df = pd.read_csv(page)
+            if len(df.index) != 0:
+                rec['last_activity'] = df['ActivityStartDate'].max()
+                data = []
+                grouped = df.groupby('CharacteristicName')
+                for idx, row in grouped.agg([np.min, np.max]).iterrows():
+                    data.append({'name': idx, 'begin_date':row['ActivityStartDate']['amin'],
+                                 'end_date': row['ActivityStartDate']['amax'],
+                                 'parm_cd': "%05d" % row['USGSPCode']['amin'],
+                                 'units': row['ResultMeasure/MeasureUnitCode']['amin']})
+                rec['parameter'] = data
+            else:
+                #if no data skip site
+                continue
+        except:
+            #if no data skip, may need to look at this is future
+            continue
+        try:
             x, y = gis_tools.transform_point(rec['LatitudeMeasure'], rec['LongitudeMeasure'])
             hits = list(idx.intersection((x, y, x, y)))  #, objects=True)) #[0]  #[0].object
             aPoint = Point(x, y)
-            row_data = set_geo(rec, aPoint, hits, data)
-            db[database][collection_backup].insert(row_data)
+            rec = set_geo(rec, aPoint, hits, data)
+            #db[database][collection_backup].insert(row_data)
         except:
             #Legacy code inserted without lat lon and covered errors in code
             #decided to just pass and eliminate error catching. May change back in the future
-            pass
-            #db[database][collection_backup].insert(rec)
-    return json.dumps({'source': 'usgs_wq', 'url': url, 'database': database, 'collection': collection_backup},
+            continue
+        #insert when geo and parameters set
+        db[database][collection_backup].insert(rec)
+    return json.dumps({'source': 'usgs_wq', 'url': url_site, 'database': database, 'collection': collection_backup},
                       indent=2)
 
 
