@@ -4,8 +4,8 @@ import StringIO
 import csv
 import commands
 import pandas as pd
-import numpu as np
-from urllib2 import urlopen
+import numpy as np
+#from urllib2 import urlopen
 from datetime import datetime  # ,timedelta
 
 from celery.task import task
@@ -319,7 +319,6 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
 
     '''
     db = Connection(mongoHost)
-    url_template =
     #backup collection
     now = datetime.now()
     collection_backup = "%s_%s" % (collection, now.strftime("%Y_%m_%d_%H%M%S") )
@@ -340,7 +339,7 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
         rec['aquifers'] = []
         try:
             url = config.wqp_result % (rec['MonitoringLocationIdentifier'])
-            page = urlopen(url)
+            page = urllib2.urlopen(url)
             df = pd.read_csv(page)
             if len(df.index) != 0:
                 rec['last_activity'] = df['ActivityStartDate'].max()
