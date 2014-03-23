@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 #from urllib2 import urlopen
 from datetime import datetime  # ,timedelta
+import os
 
 from celery.task import task
 from pymongo import Connection
@@ -337,7 +338,11 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
     reader = csv.DictReader(output, head)
 
     # set up metadata dataframe
-    url_results=config.wqp_result_ok_all
+    if os.path.isfile("%s/temp.zip" % config.wqp_tmp):
+        os.remove("%s/temp.zip" % config.wqp_tmp)
+    if os.path.isfile("%s/Result.csv" % config.wqp_tmp):
+        os.remove("%s/Result.csv" % config.wqp_tmp)
+    url_results = config.wqp_result_ok_all
     location = gis_tools.save_download(url_results, "%s/temp.zip" % config.wqp_tmp, compress='zip')
     df = pd.read_csv("%s/Result.csv" % (location), error_bad_lines=False)
 
