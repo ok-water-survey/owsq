@@ -163,6 +163,7 @@ def sites_usgs_update(database=site_database, collection=config.usgs_site_collec
         rec['watersheds'] = []
         rec['aquifers'] = []
         try:
+            row_data = rec
             #set webservices
             try:
                 row_data['webservice'], row_data['parameter'], row_data['last_activity'] = get_webservice(row_data['site_no'], db)
@@ -199,6 +200,7 @@ def sites_usgs_update(database=site_database, collection=config.usgs_site_collec
         rec['watersheds'] = []
         rec['aquifers'] = []
         try:
+            row_data = rec
             #set webservices
             try:
                 row_data['webservice'], row_data['parameter'], row_data['last_activity'] = get_webservice(row_data['site_no'], db)
