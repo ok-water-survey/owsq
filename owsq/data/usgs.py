@@ -329,28 +329,44 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
     idx, data = gis_tools.ok_watershed_aquifer_rtree()
     #if delete:
     #    db[database][collection].remove()
-    url_site = 'http://www.waterqualitydata.us/Station/search?statecode=40&mimeType=csv'
+    url_site = config.wqp_site
     sites = urllib2.urlopen(url_site)
     output = StringIO.StringIO(sites.read())
     head = output.readline()
     head = head.replace('/', '-').strip('\r\n').split(',')
-    #print head
     reader = csv.DictReader(output, head)
+
+    # set up metadata dataframe
+    url_results=config.wqp_result_ok_all
+    location = gis_tools.save_download(url_results, "%s/temp.zip" % config.wqp_tmp, compress='zip')
+    df = pd.read_csv("%s/Result.csv" % (location), error_bad_lines=False)
+
+    metadata_types = set([])
+    metadata_analytes = set([])
     for rec in reader:
         rec['watersheds'] = []
         rec['aquifers'] = []
+        metadata_types.add(rec['MonitoringLocationTypeName'].strip(' \t\n\r'))
         try:
-            url = config.wqp_result % (rec['MonitoringLocationIdentifier'])
-            page = urllib2.urlopen(url)
-            df = pd.read_csv(page)
-            if len(df.index) != 0:
-                rec['last_activity'] = df['ActivityStartDate'].max()
+            dfloc = df[df.MonitoringLocationIdentifier == rec['MonitoringLocationIdentifier']]
+            #if len(df.index) != 0:
+            #    rec['last_activity'] = df['ActivityStartDate'].max()
+            #url = config.wqp_result % (rec['MonitoringLocationIdentifier'])
+            #page = urllib2.urlopen(url)
+            #df = pd.read_csv(page)
+            if len(dfloc.index) != 0:
+                rec['last_activity'] = dfloc['ActivityStartDate'].max()
                 data = []
-                grouped = df.groupby('CharacteristicName')
+                grouped = dfloc.groupby('CharacteristicName')
                 for idx, row in grouped.agg([np.min, np.max]).iterrows():
-                    data.append({'name': idx, 'begin_date':row['ActivityStartDate']['amin'],
+                    metadata_analytes.add(idx)
+                    try:
+                        pcode = "%05d" % row['USGSPCode']['amin']
+                    except:
+                        pcode = ''
+                    data.append({'name': idx, 'begin_date': row['ActivityStartDate']['amin'],
                                  'end_date': row['ActivityStartDate']['amax'],
-                                 'parm_cd': "%05d" % row['USGSPCode']['amin'],
+                                 'parm_cd': pcode,
                                  'units': row['ResultMeasure/MeasureUnitCode']['amin']})
                 rec['parameter'] = data
             else:
@@ -371,6 +387,13 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
             continue
         #insert when geo and parameters set
         db[database][collection_backup].insert(rec)
+    rec = db[database]['catalog'].find_one({'metadata_source':'wqp'})
+    if rec:
+        rec['types'] = metadata_types
+        rec['analytes'] = metadata_analytes
+    else:
+        rec = {'metadata_source': 'wqp', 'types': metadata_types, 'analytes': metadata_analytes}
+    db[database]['catalog'].save(rec)
     return json.dumps({'source': 'usgs_wq', 'url': url_site, 'database': database, 'collection': collection_backup},
                       indent=2)
 

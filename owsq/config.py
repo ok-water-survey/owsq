@@ -54,3 +54,5 @@ aquifer_collection = "aquifers"
 #water quality portal
 wqp_result = "http://www.waterqualitydata.us/Result/search?siteid=%s&mimeType=csv"
 wqp_site = "http://www.waterqualitydata.us/Station/search?statecode=40&mimeType=csv"
+wqp_result_ok_all = "http://www.waterqualitydata.us/Result/search?statecode=40&mimeType=csv&zip=yes"
+wqp_tmp = "/data/static/tmp"
