@@ -90,7 +90,7 @@ def save_download(url, location, compress=None):
 
 def unzip(source_filename, dest_dir):
     zf = zipfile.ZipFile(source_filename)
-    zf.extractall()
+    zf.extractall(path=dest_dir)
         #for member in zf.infolist():
             # Path traversal defense copied from
             # http://hg.python.org/cpython/file/tip/Lib/http/server.py#l789
