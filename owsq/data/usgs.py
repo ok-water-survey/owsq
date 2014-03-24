@@ -8,6 +8,7 @@ import numpy as np
 #from urllib2 import urlopen
 from datetime import datetime  # ,timedelta
 import os
+import string
 
 from celery.task import task
 from pymongo import Connection
@@ -167,7 +168,8 @@ def sites_usgs_update(database=site_database, collection=config.usgs_site_collec
             row_data = rec
             #set webservices
             try:
-                row_data['webservice'], row_data['parameter'], row_data['last_activity'] = get_webservice(row_data['site_no'], db)
+                row_data['webservice'], row_data['parameter'], row_data['last_activity'] = get_webservice(
+                    row_data['site_no'], db)
             except:
                 row_data['webservice'] = []
                 row_data['parameter'] = []
@@ -204,7 +206,8 @@ def sites_usgs_update(database=site_database, collection=config.usgs_site_collec
             row_data = rec
             #set webservices
             try:
-                row_data['webservice'], row_data['parameter'], row_data['last_activity'] = get_webservice(row_data['site_no'], db)
+                row_data['webservice'], row_data['parameter'], row_data['last_activity'] = get_webservice(
+                    row_data['site_no'], db)
             except:
                 row_data['webservice'] = []
                 row_data['parameter'] = []
@@ -327,7 +330,7 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
     collection_backup = "%s_%s" % (collection, now.strftime("%Y_%m_%d_%H%M%S") )
 
     #get rtree spatial index and data object
-    idx, data = gis_tools.ok_watershed_aquifer_rtree()
+    idx, geo_data = gis_tools.ok_watershed_aquifer_rtree()
     #if delete:
     #    db[database][collection].remove()
     url_site = config.wqp_site
@@ -351,6 +354,13 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
     for rec in reader:
         rec['watersheds'] = []
         rec['aquifers'] = []
+        rec["MonitoringLocationDescriptionText"] = filter(lambda x: x in string.printable,
+                                                                  rec["MonitoringLocationDescriptionText"])
+        rec["MonitoringLocationDescriptionText"] = rec["MonitoringLocationDescriptionText"].replace("\\u00bf", "")
+        rec["MonitoringLocationDescriptionText"] = rec["MonitoringLocationDescriptionText"].replace("\u00bf", "")
+        rec["MonitoringLocationDescriptionText"] = rec["MonitoringLocationDescriptionText"].replace("\\u00bf***", "")
+        rec["MonitoringLocationDescriptionText"] = rec["MonitoringLocationDescriptionText"].replace("\u00bf***", "")
+        rec["MonitoringLocationDescriptionText"] = rec["MonitoringLocationDescriptionText"].replace("\u00bf", "")
         metadata_types.add(rec['MonitoringLocationTypeName'].strip(' \t\n\r'))
         try:
             dfloc = df[df.MonitoringLocationIdentifier == rec['MonitoringLocationIdentifier']]
@@ -363,13 +373,13 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
                 rec['last_activity'] = dfloc['ActivityStartDate'].max()
                 data = []
                 grouped = dfloc.groupby('CharacteristicName')
-                for idx, row in grouped.agg([np.min, np.max]).iterrows():
-                    metadata_analytes.add(idx)
+                for idxs, row in grouped.agg([np.min, np.max]).iterrows():
+                    metadata_analytes.add(idxs)
                     try:
                         pcode = "%05d" % row['USGSPCode']['amin']
                     except:
                         pcode = ''
-                    data.append({'name': idx, 'begin_date': row['ActivityStartDate']['amin'],
+                    data.append({'name': idxs, 'begin_date': row['ActivityStartDate']['amin'],
                                  'end_date': row['ActivityStartDate']['amax'],
                                  'parm_cd': pcode,
                                  'units': row['ResultMeasure/MeasureUnitCode']['amin']})
@@ -382,17 +392,16 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
             continue
         try:
             x, y = gis_tools.transform_point(rec['LatitudeMeasure'], rec['LongitudeMeasure'])
-            hits = list(idx.intersection((x, y, x, y)))  #, objects=True)) #[0]  #[0].object
+            hits = list(idx.intersection((x, y, x, y)))
             aPoint = Point(x, y)
-            rec = set_geo(rec, aPoint, hits, data)
-            #db[database][collection_backup].insert(row_data)
+            rec = set_geo(rec, aPoint, hits, geo_data)
         except:
             #Legacy code inserted without lat lon and covered errors in code
             #decided to just pass and eliminate error catching. May change back in the future
             continue
         #insert when geo and parameters set
         db[database][collection_backup].insert(rec)
-    rec = db[database]['catalog'].find_one({'metadata_source':'wqp'})
+    rec = db[database]['catalog'].find_one({'metadata_source': 'wqp'})
     if rec:
         rec['types'] = metadata_types
         rec['analytes'] = metadata_analytes
