@@ -41,9 +41,13 @@ def owrb_set_geo_latest(database=config.owrb_database, collection=config.owrb_si
         #set watershed and aquifer
         try:
             try:
-                dates = db[database][collection_data].distinct('observed_date', {'site': str(site['WELL_ID'])})
-                dates.sort()
-                site['last_activity'] = dates[-1]
+                dates = db[database][collection_data].find({'site': str(site['WELL_ID'])}).distinct('observed_date')
+                days =set([])
+                for day in dates:
+                    date_object = datetime.strptime(day,'%m/%d/%Y %I:%M %p')
+                    days.add(date_object.strftime("%Y-%m-%d"))
+                ldays = list(days).sort()
+                site['last_activity'] = ldays[-1]
             except:
                 pass
 
