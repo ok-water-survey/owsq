@@ -31,8 +31,9 @@ owrb_database = "ows"
 owrb_welllog_collection = "owrb_well_logs"
 well_logs_url = "http://static.cybercommons.org/OklahomaWaterSurvey/OWRB/geojson/Reported_Well_Logs.json"
 owrb_MonitorWells_collection = "owrb_monitoring_wells"
-
-
+#owrb sites
+owrb_site_collection = "owrb_water_sites"
+owrb_well_collection = "owrb_water_wells"
 #USGS Constants
 usgs_database = "ows"
 
