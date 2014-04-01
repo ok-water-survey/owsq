@@ -35,12 +35,13 @@ def owrb_set_geo_latest(database=config.owrb_database, collection=config.owrb_si
         site["huc_4"] = ''
         site["huc_8"] = ''
         site["aquifer"] = ''
+        site['last_activity'] = ''
         total_ct += 1
 
         #set watershed and aquifer
         try:
             try:
-                dates = db[database][collection_data].distinct('observed_date', {'site': site['WELL_ID']})
+                dates = db[database][collection_data].distinct('observed_date', {'site': str(site['WELL_ID'])})
                 dates.sort()
                 site['last_activity'] = dates[-1]
             except:
