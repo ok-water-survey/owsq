@@ -25,7 +25,8 @@ mesonet_mongo_host = 'localhost'  #'fire.rccc.ou.edu'
 mesonet_database = "ows"
 mesonet_collection = "mesonet_site"
 
-
+#WQP
+wqp_url_template ="http://www.waterqualitydata.us/Result/search?siteid=%s&mimeType=csv"
 #OWRB Constants
 owrb_database = "ows"
 owrb_welllog_collection = "owrb_well_logs"

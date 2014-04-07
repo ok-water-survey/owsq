@@ -24,13 +24,11 @@ def save(path, source, data_items=[]):  #name,path,query):
     call(['mkdir', '-p', sourcepath])
     urls = []
     database = config.owrb_database
-    collection = config.owrb_MonitorWells_collection
+    collection = config.owrb_well_collection
     host = get_host(dcommons)
     urlbase = host['base_directory']
-    #    owrb_url="http://test.oklahomawatersurvey.org/mongo/db_find/ows/owrb_monitoring_wells/{'spec':{'site':'%s'},'field':['']}/?outtype=csv"
     meso_url = "http://www.mesonet.org/index.php/meteogram/data/owrb_text//stid/%s/year/%s/month/%s/day/%s/timelen/%sd/product/GH20/type/csv"
     db = Connection(config.mongo_host)
-
     for key, value in consol_data.items():
         if value['query']['webservice_type'] == 'mesonet':
             filename = 'OWRB_MonitoringWell_mesonet%s.csv' % (value['query']['sites'])

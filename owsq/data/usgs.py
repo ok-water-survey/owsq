@@ -406,7 +406,7 @@ def sites_usgs_wq(database=site_database, collection='usgs_wq_site', delete=True
         rec['types'] = metadata_types
         rec['analytes'] = metadata_analytes
     else:
-        rec = {'metadata_source': 'wqp', 'types': metadata_types, 'analytes': metadata_analytes}
+        rec = {'metadata_source': 'wqp', 'types': list(metadata_types), 'parameters': list(metadata_analytes)}
     db[database]['catalog'].save(rec)
     return json.dumps({'source': 'usgs_wq', 'url': url_site, 'database': database, 'collection': collection_backup},
                       indent=2)
