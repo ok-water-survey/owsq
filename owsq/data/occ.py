@@ -51,7 +51,7 @@ def sites_occ_update(database=site_database, collection=config.occ_site_collecti
     	    #Save site data
     	    #db[database][collection].insert(row_data)
 
-    return {'source': 'occ', 'database': database,'collection': collection_backup, 
+    return {'source': 'occ', 'database': database,'collection': collection,
 		'record_count': db[database][collection].count()}
 
 
