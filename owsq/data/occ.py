@@ -44,7 +44,7 @@ def sites_occ_update(database=site_database, collection=config.occ_site_collecti
 		aPoint = Point(x, y)
 		row_data = set_geo(rec, aPoint, hits, data)
 		#Save site data
-                db[database][collection].insert(row_data)
+                db[database][collection].save(row_data)
 	    except:
 		pass
 
