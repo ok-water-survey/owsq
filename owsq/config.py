@@ -59,3 +59,6 @@ wqp_result = "http://www.waterqualitydata.us/Result/search?siteid=%s&mimeType=cs
 wqp_site = "http://www.waterqualitydata.us/Station/search?statecode=40&mimeType=csv"
 wqp_result_ok_all = "http://www.waterqualitydata.us/Result/search?statecode=40&mimeType=csv&zip=yes"
 wqp_tmp = "/data/static/tmp"
+
+#occ csv data
+occ_site_collection = "occ_sites"
