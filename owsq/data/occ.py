@@ -42,17 +42,13 @@ def sites_occ_update(database=site_database, collection=config.occ_site_collecti
 		x, y = gis_tools.transform_point(rec['Lat'], rec['Long'])
 		hits = list(idx.intersection((x, y, x, y)))  #, objects=True)) #[0]  #[0].object
 		aPoint = Point(x, y)
+                rec['watersheds']=[]
+                rec['aquifers']=[]
 		row_data = set_geo(rec, aPoint, hits, data)
 		#Save site data
                 db[database][collection].save(row_data)
 	    except Exception as err:
-                raise err
-		#pass
-		#print sys.exc_traceback.tb_lineno
-
-    	    #Save site data
-    	    #db[database][collection].insert(row_data)
-
+                pass
     return {'source': 'occ', 'database': database,'collection': collection,
 		'record_count': db[database][collection].count()}
 
