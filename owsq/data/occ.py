@@ -44,6 +44,8 @@ def sites_occ_update(database=site_database, collection=config.occ_site_collecti
 		aPoint = Point(x, y)
                 rec['watersheds']=[]
                 rec['aquifers']=[]
+                rec['huc_8']=""
+                rec['huc_4']=""
 		row_data = set_geo(rec, aPoint, hits, data)
 		#Save site data
                 db[database][collection].save(row_data)
