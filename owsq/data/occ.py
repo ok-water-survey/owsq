@@ -46,7 +46,7 @@ def sites_occ_update(database=site_database, collection=config.occ_site_collecti
 		#Save site data
                 db[database][collection].save(row_data)
 	    except Exception as err:
-                rasie err
+                raise err
 		#pass
 		#print sys.exc_traceback.tb_lineno
 
