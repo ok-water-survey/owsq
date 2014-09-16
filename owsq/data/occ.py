@@ -33,7 +33,7 @@ def sites_occ_update(database=site_database, collection=config.occ_site_collecti
     db = Connection(mongoHost)
     #backup collection
     now = datetime.now()
-
+    
     #get rtree spatial index and data object
     idx, data = gis_tools.ok_watershed_aquifer_rtree()
     for rec in db[database][collection].find():
@@ -45,9 +45,10 @@ def sites_occ_update(database=site_database, collection=config.occ_site_collecti
 		row_data = set_geo(rec, aPoint, hits, data)
 		#Save site data
                 db[database][collection].save(row_data)
-	    except:
+	    except Exception as err:
+                rasie err
 		#pass
-		print sys.exc_traceback.tb_lineno
+		#print sys.exc_traceback.tb_lineno
 
     	    #Save site data
     	    #db[database][collection].insert(row_data)
