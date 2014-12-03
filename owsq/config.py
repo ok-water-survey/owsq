@@ -61,4 +61,4 @@ wqp_result_ok_all = "http://www.waterqualitydata.us/Result/search?statecode=40&m
 wqp_tmp = "/data/static/tmp"
 
 #occ csv data
-occ_site_collection = "occ_sites"
+occ_site_collection = "occ_site"
