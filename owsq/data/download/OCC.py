@@ -20,7 +20,7 @@ def save(path,source,data_items=[]):#name,path,query):
     #urls=[]
     database=config.owrb_database
     collection=config.occ_site_data 
-    url= "http://test.oklahomawatersurvey.org/mongo/db_find/" + database + "/" + collection + "/{'spec':{'Location_id':" + str(locid) +  "}}/?outtype=csv"   
+    url= "http://test.oklahomawatersurvey.org/mongo/db_find/" + database + "/" + collection + "/{'spec':{'Location_id':" + locid +  "}}/?outtype=csv"   
     print url
     res=urllib2.urlopen(url)
     filename='OCC_Data.csv'
