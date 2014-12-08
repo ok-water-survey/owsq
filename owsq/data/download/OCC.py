@@ -33,7 +33,7 @@ def save(path,source,data_items=[]):#name,path,query):
     print urls
     return urls
 def consolidate(data_items):
-    locid=[]
+    locid={}
     for item in data_items:
         locid.append(item['query']['webservice_type'])
     return locid
