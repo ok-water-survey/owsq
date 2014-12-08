@@ -62,3 +62,5 @@ wqp_tmp = "/data/static/tmp"
 
 #occ csv data
 occ_site_collection = "occ_site"
+occ_site_data="occ_data"
+
