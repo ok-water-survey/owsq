@@ -20,7 +20,7 @@ def save(path,source,data_items=[]):#name,path,query):
     #urls=[]
     database=config.owrb_database
     collection=config.occ_site_data 
-    url= "http://test.oklahomawatersurvey.org/mongo/db_find/" + database + "/" + collection + "/{'spec':{'Location_id':" + str(locid) +  "}}/?outtype=csv"   
+    url= "http://test.oklahomawatersurvey.org/mongo/db_find/" + database + "/" + collection + "/{'spec':{'Location_id':" + str(locid).replace('[','').replace(']','') +  "}}/?outtype=csv"   
     print url
     res=urllib2.urlopen(url)
     filename='OCC_Data.csv'
@@ -35,7 +35,7 @@ def save(path,source,data_items=[]):#name,path,query):
 def consolidate(data_items):
     locid=[]
     for item in data_items:
-        locid=(item['query']['webservice_type'])
+        locid.append(item['query']['webservice_type'])
     return locid
 def get_host(dcommons):
     hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
