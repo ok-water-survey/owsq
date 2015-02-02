@@ -33,10 +33,10 @@ def save(path,source,data_items=[]):#name,path,query):
     print urls
     return urls
 def consolidate(data_items):
-    locid=[]
+    locids=[]
     for item in data_items:
-        locid.append(item['query']['webservice_type'])
-    return locid
+        locids.append(item['query']['webservice_type'])
+    return locids
 def get_host(dcommons):
     hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
     for item in(item for item in hosts if item['host']==os.uname()[1]):
