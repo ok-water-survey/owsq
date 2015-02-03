@@ -1,4 +1,4 @@
-import os,urllib2,urllib
+import os,urllib2,urllib,json
 #import ConfigParser
 from cybercom.data.catalog import datacommons #catalog
 #from owsq.data.download import filezip
@@ -15,23 +15,30 @@ def save(path,source,data_items=[]):#name,path,query):
     '''Based function to all source imports in Download module'''
     dcommons = datacommons.toolkit(username,password)
     locid=consolidate(data_items)
+    #locid=[]
+    print locid
     sourcepath = os.path.join(path,source)
     call(['mkdir','-p',sourcepath])
     #urls=[]
     database=config.owrb_database
-    collection=config.occ_site_data 
-    url= "http://test.oklahomawatersurvey.org/mongo/db_find/" + database + "/" + collection + "/{'spec':{'Location_id':" + str(locid).replace('[','').replace(']','') +  "}}/?outtype=csv"   
-    print url
-    res=urllib2.urlopen(url)
-    filename='OCC_Data.csv'
-    f1=open(os.path.join(sourcepath,filename),'w')
-    f1.write(res.read())
-    f1.close()
-    host = get_host(dcommons)
-    urlbase= host['base_directory']
-    urls=os.path.join(sourcepath.replace(urlbase ,host['url']),filename)
-    print urls
-    return urls
+    collection=config.occ_site_data
+    urltemp = "http://test.oklahomawatersurvey.org/mongo/db_find/%s/%s/{'spec':{'Location_id':'%s'}}/?outtype=csv"
+    urllist = []
+    for locquery in locid:
+        print locquery
+        #data = json.loads(locquery)
+        #print data
+        url = urltemp % (database,collection,locquery)
+        print url
+        res=urllib2.urlopen(url)
+        filename='OCC_Data_%s.csv' % locquery
+        f1=open(os.path.join(sourcepath,filename),'w')
+        f1.write(res.read())
+        f1.close()
+        host = get_host(dcommons)
+        urlbase= host['base_directory']
+        urllist.append(os.path.join(sourcepath.replace(urlbase ,host['url']),filename))
+    return urllist
 def consolidate(data_items):
     locids=[]
     for item in data_items:
