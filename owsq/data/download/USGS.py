@@ -8,11 +8,11 @@ from owsq import config
 from pymongo import MongoClient
 
 #set catalog user and passwd
-cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
-config= ConfigParser.RawConfigParser()
-config.read(cfgfile)
-username = config.get('user','username')
-password = config.get('user','password')
+#cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
+#config= ConfigParser.RawConfigParser()
+#config.read(cfgfile)
+#username = config.get('user','username')
+#password = config.get('user','password')
 
 @task
 def save(path,source,data_items=[]):#name,path,query):

@@ -7,8 +7,8 @@ from celery.task import task
 from owsq import config
 from pymongo import MongoClient
 #set catalog user and passwd
-username = config.catalog_username #s.get('user','username')
-password = config.catalog_password #s.get('user','password')
+#username = config.catalog_username #s.get('user','username')
+#password = config.catalog_password #s.get('user','password')
 
 @task
 def save(path,source,data_items=[]):#name,path,query):
