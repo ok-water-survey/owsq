@@ -5,9 +5,11 @@ import ConfigParser
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
 configs = ConfigParser.RawConfigParser()
 configs.read(cfgfile)
-catalog_username = configs.get('user', 'username')
-catalog_password = configs.get('user', 'password')
+catalog_username = configs.get('catalog', 'username')
+catalog_password = configs.get('catalog', 'password')
 
+#catalog
+catalog_uri = 'mongodb://%s:%s@worker.oklahomawatersurvey.org:27027/?authSource=admin' % (catalog_username,catalog_password)
 
 #mongo Connection
 mongo_host = 'localhost'

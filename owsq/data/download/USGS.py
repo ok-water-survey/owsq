@@ -1,9 +1,11 @@
 import os,commands,urllib2,copy#,ast
 import ConfigParser
-from cybercom.data.catalog import datacommons #catalog
+#from cybercom.data.catalog import datacommons #catalog
 from owsq.data.download import filezip
 from subprocess import call
 from celery.task import task
+from owsq import config
+from pymongo import MongoClient
 
 #set catalog user and passwd
 cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
@@ -60,7 +62,8 @@ def consolidate(data_items):
     return cons_queries
 def save_csv(url,path,query):
     if query['webservice_type']!='ad':
-        dcommons = datacommons.toolkit(username,password)
+        db = MongoClient(config.catalog_uri)
+        #dcommons = datacommons.toolkit(username,password)
         if query['webservice_type']!='qw':
             data,ordercol,head = filezip.rdb2json(url)
         else:
@@ -71,11 +74,12 @@ def save_csv(url,path,query):
         f1=open(os.path.join(path,filename),'w')
         f1.write(filezip.csvfile_processor(data,cols=ordercol,header=head))
         f1.close()
-        host=get_host(dcommons)
+        host=get_host(db)#dcommons)
         return os.path.join(path.replace(host['base_directory'],host['url']),filename)
     return None
-def get_host(dcommons):
-    hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
+def get_host(db):
+    hosts = db['ows']['data'].find({'data_provider':'APP_HOSTS'},fields=['sources'])[0]['sources']
+    #hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
     for item in(item for item in hosts if item['host']==os.uname()[1]):
         return item
     raise 'No Host specified, Please upadate Catalog'
@@ -83,11 +87,14 @@ def get_host(dcommons):
 def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_format='rdb'):
     '''Load data from USGS websevice and store local NGINX web server. Returns url of file'''
     #Load source web service data from metadata catalog
-    dcommons = datacommons.toolkit(username,password)
-    sources = dcommons.get_data('ows',{'spec':{'data_provider':data_provider}})[0]
+    db = MongoClient(config.catalog_uri)
+    #dcommons = datacommons.toolkit(username,password)
+    sources = db['ows']['data'].find({'data_provider':data_provider})[0] #,fields=['sources'])[0]['sources']
+    #sources = dcommons.get_data('ows',{'spec':{'data_provider':data_provider}})[0]
     #Get Host information - NGINX root and urls from metadata catalog
     host=None
-    hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
+    hosts = db['ows']['data'].find({'data_provider':'APP_HOSTS'},fields=['sources'])[0]['sources']
+    #hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
     for item in(item for item in hosts if item['host']==os.uname()[1]):
         host=item
     if not host:
@@ -135,8 +142,9 @@ def save_sitedata(name,path,query,data_provider='USGS-Tools-TypeSet',default_for
 
 def save_reports(path,query):
     #Load source web service data from metadata catalog
-    dcommons = datacommons.toolkit(username,password)
-    host = get_host(dcommons)
+    db = MongoClient(config.catalog_uri)
+    #dcommons = datacommons.toolkit(username,password)
+    host = get_host(db)#commons)
     urlbase= host['base_directory']
     rpts=query['special']
     newpath= '%s/%s' % (path,'reports')
