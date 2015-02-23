@@ -1,17 +1,19 @@
 import os
-import ConfigParser
-from cybercom.data.catalog import datacommons #catalog
+#import ConfigParser
+#from cybercom.data.catalog import datacommons #catalog
 from owsq.data.download import filezip
 from subprocess import call
 from celery.task import task
 import dateutil.parser
 from datetime import  timedelta
+from owsq import config
+from pymongo import MongoClient
 #set catalog user and passwd
-cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
-config= ConfigParser.RawConfigParser()
-config.read(cfgfile)
-username = config.get('user','username')
-password = config.get('user','password')
+#cfgfile = os.path.join(os.path.expanduser('/opt/celeryq'), '.cybercom')
+#config= ConfigParser.RawConfigParser()
+#config.read(cfgfile)
+#username = config.get('user','username')
+#password = config.get('user','password')
 
 @task
 def save(path,source,data_items=[]):#name,path,query):
@@ -40,16 +42,18 @@ def consolidate(data_items):
                 cons_queries[node]['query']['endDT']=item['query']['endDT'] 
     return cons_queries
 def save_csv(urls,path,name):
-    dcommons = datacommons.toolkit(username,password)
+    db = MongoClient(config.catalog_uri)
+    #dcommons = datacommons.toolkit(username,password)
     data,ordercol,head = filezip.meso2json(urls)
     f1=open(os.path.join(path,name),'w')
     f1.write(filezip.csvfile_processor(data,cols=ordercol,header=head))
     f1.close()
-    host=get_host(dcommons)
+    host=get_host(db)
     return os.path.join(path.replace(host['base_directory'],host['url']),name)
  
-def get_host(dcommons):
-    hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
+def get_host(db):
+    hosts = db['ows']['data'].find({'data_provider':'APP_HOSTS'},fields=['sources'])[0]['sources']
+    #hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
     for item in(item for item in hosts if item['host']==os.uname()[1]):
         return item
     raise 'No Host specified, Please upadate Catalog'
@@ -57,8 +61,9 @@ def get_host(dcommons):
 def save_sitedata(path,query):
     url_tmpl = 'http://www.mesonet.org/index.php/dataMdfMts/dataController/getFile/%s%s/mts/TEXT/'
     #Load source web service data from metadata catalog
-    dcommons = datacommons.toolkit(username,password)
-    host = get_host(dcommons)
+    db = MongoClient(config.catalog_uri)
+    #dcommons = datacommons.toolkit(username,password)
+    host = get_host(db)
     urlbase= host['base_directory']
     start=dateutil.parser.parse(query['startDT'])
     end =dateutil.parser.parse(query['endDT'])

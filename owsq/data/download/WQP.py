@@ -1,28 +1,30 @@
 import os, urllib2  #,urllib
 #import ConfigParser
-from cybercom.data.catalog import datacommons  #catalog
+#from cybercom.data.catalog import datacommons  #catalog
 #from owsq.data.download import filezip
 from subprocess import call
 from celery.task import task
 from owsq import config
+from pymongo import MongoClient
 #import dateutil.parser
 #from pymongo import Connection
 #from scrapy.selector import HtmlXPathSelector
 #from BeautifulSoup import BeautifulSoup
 #from datetime import datetime
 #set catalog user and passwd
-username = config.catalog_username  #s.get('user','username')
-password = config.catalog_password  #s.get('user','password')
+#username = config.catalog_username  #s.get('user','username')
+#password = config.catalog_password  #s.get('user','password')
 
 @task
 def save(path, source, data_items=[]):  #name,path,query):
     '''Based function to all source imports in Download module'''
-    dcommons = datacommons.toolkit(username, password)
+    db = MongoClient(config.catalog_uri)
+    #dcommons = datacommons.toolkit(username, password)
     consol_data = consolidate(data_items)
     sourcepath = os.path.join(path, 'WaterQuality', 'data')
     call(['mkdir', '-p', sourcepath])
     urls = []
-    host = get_host(dcommons)
+    host = get_host(db) #commons)
     urlbase = host['base_directory']
     url_template = config.wqp_url_template
     for key, value in consol_data.items():
@@ -50,8 +52,9 @@ def consolidate(data_items):
     return cons_queries
 
 
-def get_host(dcommons):
-    hosts = dcommons.get_data('ows', {'spec': {'data_provider': 'APP_HOSTS'}, 'fields': ['sources']})[0]['sources']
+def get_host(db):
+    hosts = db['ows']['data'].find({'data_provider':'APP_HOSTS'},fields=['sources'])[0]['sources']
+    #hosts = dcommons.get_data('ows', {'spec': {'data_provider': 'APP_HOSTS'}, 'fields': ['sources']})[0]['sources']
     for item in (item for item in hosts if item['host'] == os.uname()[1]):
         return item
     raise 'No Host specified, Please upadate Catalog'

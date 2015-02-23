@@ -5,18 +5,20 @@ from cybercom.data.catalog import datacommons #catalog
 from subprocess import call
 from celery.task import task
 from owsq import config
+from pymongo import MongoClient
 
 #set catalog user and passwd
-username = config.catalog_username #s.get('user','username')
-password = config.catalog_password #s.get('user','password')
+#username = config.catalog_username #s.get('user','username')
+#password = config.catalog_password #s.get('user','password')
 
 @task
 def save(path,source,data_items=[]):#name,path,query):
     '''Based function to all source imports in Download module'''
-    dcommons = datacommons.toolkit(username,password)
+    db = MongoClient(config.catalog_uri)
+    #dcommons = datacommons.toolkit(username,password)
     locid=consolidate(data_items)
     #locid=[]
-    print locid
+    #print locid
     sourcepath = os.path.join(path,source)
     call(['mkdir','-p',sourcepath])
     #urls=[]
@@ -29,13 +31,13 @@ def save(path,source,data_items=[]):#name,path,query):
         #data = json.loads(locquery)
         #print data
         url = urltemp % (database,collection,locquery)
-        print url
+        #print url
         res=urllib2.urlopen(url)
         filename='OCC_Data_%s.csv' % locquery
         f1=open(os.path.join(sourcepath,filename),'w')
         f1.write(res.read())
         f1.close()
-        host = get_host(dcommons)
+        host = get_host(db)#commons)
         urlbase= host['base_directory']
         urllist.append(os.path.join(sourcepath.replace(urlbase ,host['url']),filename))
     return urllist
@@ -44,8 +46,9 @@ def consolidate(data_items):
     for item in data_items:
         locids.append(item['query']['webservice_type'])
     return locids
-def get_host(dcommons):
-    hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
+def get_host(db): #commons):
+    hosts = db['ows']['data'].find({'data_provider':'APP_HOSTS'},fields=['sources'])[0]['sources']
+    #hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
     for item in(item for item in hosts if item['host']==os.uname()[1]):
         return item
     raise 'No Host specified, Please upadate Catalog'

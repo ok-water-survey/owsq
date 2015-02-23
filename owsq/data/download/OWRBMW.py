@@ -1,6 +1,6 @@
 import os, urllib2  #,urllib
 #import ConfigParser
-from cybercom.data.catalog import datacommons  #catalog
+#from cybercom.data.catalog import datacommons  #catalog
 #from owsq.data.download import filezip
 from subprocess import call
 from celery.task import task
@@ -11,21 +11,22 @@ from scrapy.selector import HtmlXPathSelector
 from BeautifulSoup import BeautifulSoup
 from datetime import datetime
 #set catalog user and passwd
-username = config.catalog_username  #s.get('user','username')
-password = config.catalog_password  #s.get('user','password')
+#username = config.catalog_username  #s.get('user','username')
+#password = config.catalog_password  #s.get('user','password')
 
 
 @task
 def save(path, source, data_items=[]):  #name,path,query):
     '''Based function to all source imports in Download module'''
-    dcommons = datacommons.toolkit(username, password)
+    db1 = MongoClient(config.catalog_uri)
+    #dcommons = datacommons.toolkit(username, password)
     consol_data = consolidate(data_items)
     sourcepath = os.path.join(path, 'OWRB', 'Monitor_Wells')
     call(['mkdir', '-p', sourcepath])
     urls = []
     database = config.owrb_database
     collection = config.owrb_MonitorWells_collection
-    host = get_host(dcommons)
+    host = get_host(db1)#commons)
     urlbase = host['base_directory']
     #    owrb_url="http://test.oklahomawatersurvey.org/mongo/db_find/ows/owrb_monitoring_wells/{'spec':{'site':'%s'},'field':['']}/?outtype=csv"
     meso_url = "http://www.mesonet.org/index.php/meteogram/data/owrb_text//stid/%s/year/%s/month/%s/day/%s/timelen/%sd/product/GH20/type/csv"
@@ -106,8 +107,9 @@ def consolidate(data_items):
     return cons_queries
 
 
-def get_host(dcommons):
-    hosts = dcommons.get_data('ows', {'spec': {'data_provider': 'APP_HOSTS'}, 'fields': ['sources']})[0]['sources']
+def get_host(db):
+    hosts = db['ows']['data'].find({'data_provider':'APP_HOSTS'},fields=['sources'])[0]['sources']
+    #hosts = dcommons.get_data('ows', {'spec': {'data_provider': 'APP_HOSTS'}, 'fields': ['sources']})[0]['sources']
     for item in (item for item in hosts if item['host'] == os.uname()[1]):
         return item
     raise 'No Host specified, Please upadate Catalog'
