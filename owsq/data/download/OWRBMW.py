@@ -10,6 +10,7 @@ from pymongo import Connection
 from scrapy.selector import HtmlXPathSelector
 from BeautifulSoup import BeautifulSoup
 from datetime import datetime
+from pymongo import MongoClient
 #set catalog user and passwd
 #username = config.catalog_username  #s.get('user','username')
 #password = config.catalog_password  #s.get('user','password')
