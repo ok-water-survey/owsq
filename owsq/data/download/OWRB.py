@@ -38,7 +38,7 @@ def consolidate(data_items):
     for item in data_items:
         county.append(item['query']['webservice_type'])
     return county
-def get_host(dcommons):
+def get_host(db):
     query = {'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']}
     hosts= db['ows']['data'].find(**query)[0]['sources']
     #hosts = dcommons.get_data('ows',{'spec':{'data_provider':'APP_HOSTS'},'fields':['sources']})[0]['sources']
